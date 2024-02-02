@@ -1,4 +1,4 @@
-# x16term
+# CX-Net 
 This will be the home of the X16 Serial Terminal.
 
 ## Description
@@ -20,7 +20,7 @@ Planned features are:
   * Auto-download with automatic filename
   * Cross platform X-Net server for Windows, Linux, Mac, and X16.
 
-## Commander.Net Server
+## CX-Net Server
 * Runs on Windows, Mac, and Linux:
 * Emulate a Hayes modem for Internet dialout.
   * AT *address* dialing commands
