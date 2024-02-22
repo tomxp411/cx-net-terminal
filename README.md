@@ -20,7 +20,7 @@ Planned features are:
   * Auto-download with automatic filename
   * Cross platform X-Net server for Windows, Linux, Mac, and X16.
 
-## CX-Net Server
+## CX-Net Bridge
 * Runs on Windows, Mac, and Linux:
 * Emulate a Hayes modem for Internet dialout.
   * AT *address* dialing commands
