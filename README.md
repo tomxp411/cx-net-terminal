@@ -25,4 +25,4 @@ Planned features are:
 * Emulate a Hayes modem for Internet dialout.
   * AT *address* dialing commands
 * Quick file transfer to/from the PC
-* PC "Host Mode" mini BBS, with e-mail and file section.
+* PC "Host Mode" mini BBS, file transfer to and from your X16 or any computer with standard transfer protocols (XModem, YModem, etc).
