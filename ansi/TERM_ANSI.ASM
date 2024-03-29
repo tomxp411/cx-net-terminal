@@ -15,13 +15,15 @@ vera_data0 = $9f23    ; VERA data port 0
 vera_data1 = $9f24    ; VERA data port 1
 vera_dcsel = $9f25    ; VERA data select register
 
+strout_addr = $7E     ; string pointer for strout procedure
+
 ;
 ; Sets the cursor position
-; R0L = Col (1 based)
-; R0H = Row (1 based)
+; .X Column
+; .Y Row
+; Modifies: None
 locate:
     txa 
-    asl
     sta VCol
     tya
     sta VRow
@@ -36,6 +38,7 @@ locate:
 load_addr_vector:
     stz vera_dcsel        ; work with data port 0
     lda VCol
+    asl A
     sta vera_addr0
     lda VRow
     clc
@@ -44,6 +47,14 @@ load_addr_vector:
     lda VBnk
     sta vera_addr2
     rts
+
+; Print a null-terminated string
+; strout_addr: string address
+; modifies r0 .A .Y .P
+strout:
+    ldy #0
+    lda (
+
 
 ; Print a character to the screen 
 ; Intercepts and stores any ANSI terminal sequences

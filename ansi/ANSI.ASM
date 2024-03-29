@@ -29,10 +29,8 @@ StrAddr = $02    ; R0  address of string to print
 start:
 
 print_str:
-    lda start_pos
-    sta R0L
-    lda start_pos+1
-    sta R0H
+    ldx start_pos
+    ldy start_pos+1
     jsr locate
 
     ldx #0
@@ -44,15 +42,19 @@ print_loop:
     inx
     bra print_loop
 print_done:
-    rts
-
+    bra print_done
+    brk
+    brk
+    brk
 
 ; Test strings
 ;.enc "screen"
 start_pos:
     .byte 10,32
 str_test:
-    .text "ROW 10 COL 32"
+    .text "ROW 10 COL 32",0
+
+str_test_home:
     .text 27,"[H"
     .text "HOME POSITION"
     .byte 0

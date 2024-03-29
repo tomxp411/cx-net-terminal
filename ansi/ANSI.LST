@@ -1,0 +1,148 @@
+
+; 64tass Turbo Assembler Macro V1.59.3120 listing file
+; 64tass -o ANSI.PRG --list ANSI.LST --cbm-prg ANSI.ASM
+; Thu Mar 28 16:02:30 2024
+
+;Offset	;Hex		;Monitor	;Source
+
+;******  Processing input file: ANSI.ASM
+
+>0801	0b 08 0a 00 ce 90 3a 9e		.byte $0B,$08,$0A,$00,$CE,$90,$3A,$9E,$24,$38,$31,$30,$00,$00,$00
+>0809	24 38 31 30 00 00 00
+=$02					R0      = $02
+=$02					R0L     = $02
+=$03					R0H     = $03
+=$04					R1      = $04
+=$04					R1L     = $04
+=$05					R1H     = $05
+=$02					StrAddr = $02    ; R0  address of string to print
+.0810					start:
+.0810					print_str:
+.0810	ad 32 08	lda $0832	    lda start_pos
+.0813	85 02		sta $02		    sta R0L
+.0815	ad 33 08	lda $0833	    lda start_pos+1
+.0818	85 03		sta $03		    sta R0H
+.081a	20 53 08	jsr $0853	    jsr locate
+.081d	a2 00		ldx #$00	    ldx #0
+.081f	20 5d 08	jsr $085d	    jsr load_addr_vector
+.0822					print_loop:
+.0822	bd 34 08	lda $0834,x	    lda str_test,x
+.0825	f0 06		beq $082d	    beq print_done
+.0827	20 77 08	jsr $0877	    jsr chrout
+.082a	e8		inx		    inx
+.082b	80 f5		bra $0822	    bra print_loop
+.082d					print_done:
+.082d	80 fe		bra $082d	    bra print_done
+.082f	00		brk #		    brk
+.0830	00		brk #		    brk
+.0831	00		brk #		    brk
+.0832					start_pos:
+>0832	0a 20				    .byte 10,32
+.0834					str_test:
+>0834	52 4f 57 20 31 30 20 43		    .text "ROW 10 COL 32",0
+>083c	4f 4c 20 33 32 00
+.0842					str_test_home:
+>0842	1b 5b 48			    .text 27,"[H"
+>0845	48 4f 4d 45 20 50 4f 53		    .text "HOME POSITION"
+>084d	49 54 49 4f 4e
+>0852	00				    .byte 0
+
+;******  Processing file: TERM_ANSI.ASM
+
+=$b000					ScrnAdr = $B000  ; Address of screen buffer in VERA
+=$9f20					vera_addr0 = $9f20    ; low byte of display address (col)
+=$9f21					vera_addr1 = $9f21    ; middle byte of display address (row)
+=$9f22					vera_addr2 = $9f22    ; high byte of display address (bank + increment)
+=$9f23					vera_data0 = $9f23    ; VERA data port 0
+=$9f24					vera_data1 = $9f24    ; VERA data port 1
+=$9f25					vera_dcsel = $9f25    ; VERA data select register
+.0853					locate:
+.0853	8a		txa		    txa
+.0854	0a		asl a		    asl
+.0855	8d da 08	sta $08da	    sta VCol
+.0858	98		tya		    tya
+.0859	8d db 08	sta $08db	    sta VRow
+.085c	60		rts		    rts
+.085d					load_addr_vector:
+.085d	9c 25 9f	stz $9f25	    stz vera_dcsel        ; work with data port 0
+.0860	ad da 08	lda $08da	    lda VCol
+.0863	8d 20 9f	sta $9f20	    sta vera_addr0
+.0866	ad db 08	lda $08db	    lda VRow
+.0869	18		clc		    clc
+.086a	6d dd 08	adc $08dd	    adc VBase
+.086d	8d 21 9f	sta $9f21	    sta vera_addr1
+.0870	ad dc 08	lda $08dc	    lda VBnk
+.0873	8d 22 9f	sta $9f22	    sta vera_addr2
+.0876	60		rts		    rts
+.0877					chrout:
+.0877	ac e4 08	ldy $08e4	    ldy cmd_pos
+.087a	f0 0e		beq $088a	    beq chrout_not_tsq
+.087c	c9 40		cmp #$40	    cmp #$40 ; check for letter
+.087e	10 07		bpl $0887	    bpl chrout_cmd
+.0880	99 e5 08	sta $08e5,y	    sta cmd_buffer,y
+.0883	c8		iny		    iny
+.0884	c0 10		cpy #$10	    cpy #cmd_max
+.0886	60		rts		    rts
+.0887					chrout_cmd:
+.0887	4c c9 08	jmp $08c9	    jmp do_cmd
+.088a					chrout_not_tsq:
+.088a	c9 1b		cmp #$1b	    cmp #27 ; check for escape character
+.088c	d0 04		bne $0892	    bne chrout_not_esc
+.088e	99 e5 08	sta $08e5,y	    sta cmd_buffer,y
+.0891	c8		iny		    iny
+.0892					chrout_not_esc:
+.0892	8d 23 9f	sta $9f23	    sta vera_data0
+.0895	ad de 08	lda $08de	    lda VAttr
+.0898	8d 23 9f	sta $9f23	    sta vera_data0
+.089b	ad 20 9f	lda $9f20	    lda vera_addr0
+.089e	8d da 08	sta $08da	    sta VCol
+.08a1	60		rts		    rts
+.08a2	4c a8 08	jmp $08a8	    jmp check_bounds
+.08a5					chrout_clear_cmd:
+.08a5	9c e4 08	stz $08e4	    stz cmd_pos
+.08a8					check_bounds:
+.08a8	ad da 08	lda $08da	    lda VCol
+.08ab	cd e0 08	cmp $08e0	    cmp Col_max
+.08ae	30 07		bmi $08b7	    bmi check_row
+.08b0	9c da 08	stz $08da	    stz VCol
+.08b3	ee db 08	inc $08db	    inc VRow
+.08b6	38		sec		    sec
+.08b7					check_row:
+.08b7	ad db 08	lda $08db	    lda VRow
+.08ba	30 07		bmi $08c3	    bmi check_load_addr_vector
+.08bc	38		sec		    sec
+.08bd	ad e1 08	lda $08e1	    lda Row_max
+.08c0	8d db 08	sta $08db	    sta VRow
+.08c3					check_load_addr_vector:
+.08c3	90 03		bcc $08c8	    bcc check_done
+.08c5	4c 5d 08	jmp $085d	    jmp load_addr_vector
+.08c8					check_done:
+.08c8	60		rts		    rts
+.08c9					do_cmd:
+.08c9	c9 48		cmp #$48	    cmp #'H'
+.08cb	d0 03		bne $08d0	    bne not_h
+.08cd	4c d3 08	jmp $08d3	    jmp do_home
+.08d0					not_h:
+.08d0	4c a5 08	jmp $08a5	    jmp chrout_clear_cmd
+.08d3					do_home:
+.08d3	64 02		stz $02		    stz R0L
+.08d5	64 03		stz $03		    stz R0H
+.08d7	4c a5 08	jmp $08a5	    jmp chrout_clear_cmd
+>08da	00				VCol:       .byte $00 ; column number (addr bits 0-7)
+>08db	00				VRow:       .byte $00 ; row number (addr bits 8-15)
+>08dc	11				VBnk:       .byte $11 ; auto-increment and addr bit 16.
+>08dd	b0				VBase:      .byte $b0 ; base address of screen buffer
+>08de	01				VAttr:      .byte $01 ; color attribute
+>08df	00				VChr:       .byte $00 ; character being printed
+>08e0	9e				Col_max:    .byte 79 * 2
+>08e1	18				Row_max:    .byte 24
+>08e2	00				cmd_x       .byte 0   ; first parameter in command
+>08e3	00				cmd_y       .byte 0   ; second parameter in command
+>08e4	00				cmd_pos     .byte 0   ; >0 if parsing a terminal sequence
+=16					cmd_max     = 16   ; length of terminal sequence buffer
+>08e5					cmd_buffer  .fill cmd_max
+
+;******  Return to file: ANSI.ASM
+
+
+;******  End of listing
