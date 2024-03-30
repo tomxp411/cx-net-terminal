@@ -26,4 +26,3 @@ goto done
 echo Assembly failed.
 
 :done
-echo END OF LINE
