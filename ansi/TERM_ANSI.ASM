@@ -35,6 +35,17 @@ incr16 .macro
     +
 .endmacro
 
+; sets up the callback
+; loads the ANSI character set
+; sets ISO mode
+ansi_init:
+    lda #15     ; ISO mode PETSCII character
+    jsr $FFD2   ; print it
+
+    ; set ANSI character set
+    lda #7
+    jsr $ff62 ; screen_set_charset
+
 ;
 ; Sets the cursor position
 ; .X Column
