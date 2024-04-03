@@ -216,6 +216,9 @@ do_cmd:
     cmp #'J'
     beq do_ED
 
+    cmp #'K'
+    beq do_EL
+
     ; if a bad escape code is encountered, skip
     jmp cmd_done
 
@@ -230,6 +233,56 @@ do_CUP:
 +   jsr locate
     jmp cmd_done
 
+; Erase Line
+do_EL:
+    ; 0=cursor to end of  line
+    lda cmd_1
+    bne +
+
+    ; copy cursor location to start_addr
+    lda csr_col
+    sta start_col
+    lda csr_row
+    sta start_row
+
+    ; copy end of line to end_addr
+    lda col_count
+    sta end_col
+    lda csr_row
+    sta end_row
+
+    jmp do_erase
+
+    ; 1=beginning of line to cursor
++   cmp #1
+    bne +
+
+    ; copy start of line to start address
+    stz start_col
+    lda csr_row
+    sta start_row
+    ; copy cursor location to end addr
+    lda csr_col
+    sta end_col
+    lda csr_row
+    sta end_row
+    jmp do_erase
+    
+    ; 2=clear entire line
++   cmp #2
+    bne +
+
+    ; copy start of line to start address
+    stz start_col
+    lda csr_row
+    sta start_row
+    ; copy end of line to end address
+    lda col_count
+    sta end_col
+    lda csr_row
+    sta end_row
+    jmp do_erase
+
 ; Erase Display
 do_ED:
     lda cmd_1
@@ -238,9 +291,9 @@ do_ED:
 
     ; copy cursor location to start_addr
     lda csr_col
-    sta work_col
+    sta start_col
     lda csr_row
-    sta work_row
+    sta start_row
 
     ; copy end of screen to end_addr
     lda col_count
@@ -256,8 +309,8 @@ do_ED:
     bne +
 
     ; copy start of screen to start addr
-    stz work_col
-    stz work_row
+    stz start_col
+    stz start_row
 
     ; copy cursor location to end addr
     lda csr_col
@@ -274,8 +327,8 @@ do_ED:
 
 ansi_cls:
     ; copy start of screen to start addr
-    stz work_col    ;4
-    stz work_row    ;4
+    stz start_col    ;4
+    stz start_row    ;4
 
     ; copy end of screen to end_addr
     lda col_count   ;4
@@ -325,16 +378,16 @@ erase_end_row:
     ; perform the end of row callback and advance to the next row
     jsr do_callback
 
+    lda work_row
+    lda work_row
+    beq erase_last_row
+    bcs erase_done
+
     ; 2 to n-1 row
 erase_next_row:
     stz vera_addr0
     inc vera_addr1
     inc work_row
-    lda work_row
-    dec a
-    cmp end_row
-    beq erase_last_row
-    bcs erase_done
 
     lda col_count
     bra erase_fill_byte
@@ -430,12 +483,14 @@ cmd_2       .byte 0     ; RAM second parameter in CSI
 digit_1     .byte 0     ; RAM character being processed
 
 ; temp variables
-work_col      .byte 0  ; TEMP tracking values for screen clear, scroll
-work_row      .byte 0  ; TEMP
-end_col       .byte 0  ; TEMP
-end_row       .byte 0  ; TEMP
-mult_1       .byte 0   ; TEMP temp slot for multiplication
-mult_2       .byte 0   ; TEMP temp slot for multiplication
+start_col:
+work_col:      .byte 0  ; TEMP tracking values for screen clear, scroll
+start_row:
+work_row:      .byte 0  ; TEMP
+end_col:       .byte 0  ; TEMP
+end_row:       .byte 0  ; TEMP
+mult_1:       .byte 0   ; TEMP temp slot for multiplication
+mult_2:       .byte 0   ; TEMP temp slot for multiplication
 
 ; this address is called at the end of each row when the screen is being
 ; scrolled or cleared (or any other long operation)

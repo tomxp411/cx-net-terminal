@@ -84,6 +84,7 @@ str_test_home:
     .text 27,"[Z invalid command in escape code",$0d,$0a
     .byte 0
 
+    ; erase display test
     .text 27,"[2J"
     .text 27,"[H"
     .text "1",$0D,$0A
@@ -124,10 +125,52 @@ str_test_home:
     .text "9",$0D,$0A
     .text ".........1.........2.........3.........4.........5.........6.........7.........8"
     .text 27,      "[11;40H<- Erasing to cursor"
-    .text 27,"[59;53HThis should remain visible.",0
-
+    .text 27,"[59;53HThis should remain visible."
+    .byte 0
     .text 27,"[11;40H"
     .text 27,"[1J"
+    .byte 0
+
+    ; erase line tests
+    .text 27,"[2J"
+    .text 27,"[10;1H"
+    .text ".........1.........2.........3.........4.........5.........6.........7.........8",13,10
+    .text "     [K  Erase cursor to end of line ->[This text should disappear]",13,10
+    .text ".........1.........2.........3.........4.........5.........6.........7.........8",13,10
+    .byte 0
+    .text 27,"[11;40H"
+    .text 27,"[K"
+    .byte 0
+
+    ; erase line tests
+    .text 27,"[2J"
+    .text 27,"[10;1H"
+    .text ".........1.........2.........3.........4.........5.........6.........7.........8",13,10
+    .text "     [0K Erase cursor to end of line ->[This text should disappear]",13,10
+    .text ".........1.........2.........3.........4.........5.........6.........7.........8",13,10
+    .byte 0
+    .text 27,"[11;40H"
+    .text 27,"[0K"
+    .byte 0
+
+    .text 27,"[2J"
+    .text 27,"[10;1H"
+    .text ".........1.........2.........3.........4.........5.........6.........7.........8",13,10
+    .text "       1K  [This text should disappear]<- Erase start of line to cursor",13,10
+    .text ".........1.........2.........3.........4.........5.........6.........7.........8",13,10
+    .byte 0
+    .text 27,"[11;39H"
+    .text 27,"[1K"
+    .byte 0
+
+    .text 27,"[2J"
+    .text 27,"[10;1H"
+    .text ".........1.........2.........3.........4.........5.........6.........7.........8",13,10
+    .text "         2K      Erase Entire line. This line should disappear.",13,10
+    .text ".........1.........2.........3.........4.........5.........6.........7.........8",13,10
+    .byte 0
+    .text 27,"[11;40H"
+    .text 27,"[2K"
     .byte 0
 
     .text 27,"[30;31HErase full screen",0
