@@ -21,16 +21,6 @@
 main:
     jsr ansi_init
 
-;     stz R1L
-;     lda #4
-;     sta R1H
-; -   jsr ansi_cls
-;     dec R1L
-;     bne -
-;     dec R1H
-;     bne -
-;     stp 
-
 test_start:
     ldx start_pos
     ldy start_pos+1
@@ -55,6 +45,9 @@ done:
 
     ; if we ever get here, something has failed
     brk
+
+ansi_callback:
+    RTS
 
 ; end of program (easy to see in MONitor)
 .byte 0,0,0,0
@@ -86,9 +79,10 @@ str_test_home:
     .byte 0
 
     .text 27,"[2J"
-    .text 27,"[10HBad escape code tests:",13,10,0
-    .text 27,"H missing [ in escape code",$0d,$0a,0
-    .text 27,"[Z invalid command in escape code",$0d,$0a,0
+    .text 27,"[10HBad escape code tests:",13,10
+    .text 27,"H missing [ in escape code",$0d,$0a
+    .text 27,"[Z invalid command in escape code",$0d,$0a
+    .byte 0
 
     .text 27,"[2J"
     .text 27,"[H"
@@ -104,7 +98,7 @@ str_test_home:
     .text ".........1.........2.........3.........4.........5.........6.........7.........8"
     .text "11",$0D,$0A
     .text ".........1.........2.........3.........4.........5.........6.........7.........8"
-s   .text "13",$0D,$0A
+    .text "13",$0D,$0A
     .text "14",$0D,$0A
     .text "15",$0D,$0A
     .text "16",$0D,$0A
@@ -116,7 +110,7 @@ s   .text "13",$0D,$0A
     .text 27,"[11;40H[This text should disappear]",0
     .text 27,"[11;40H"
     .text 27,"[0J"
-    .text 0
+    .byte 0
 
     .text 27,"[H"
     .text "1",$0D,$0A
@@ -129,19 +123,21 @@ s   .text "13",$0D,$0A
     .text "8",$0D,$0A
     .text "9",$0D,$0A
     .text ".........1.........2.........3.........4.........5.........6.........7.........8"
-    .text 27,      "[11;40H<- Erasing to cursor",0
+    .text 27,      "[11;40H<- Erasing to cursor"
+    .text 27,"[59;53HThis should remain visible.",0
 
     .text 27,"[11;40H"
     .text 27,"[1J"
-    .text 0
+    .byte 0
 
     .text 27,"[30;31HErase full screen",0
     .text 27,"[2J"
     .text 27,"[31;33HScreen cleared",0
 
     .text 27,"[2;2HPress a key to restart test"
+    .byte 0
 
     ; end of data segment
     .byte 0,0,0,0
 
-.include "TERM_ANSI.ASM"
+.include "ANSI_DRIVER.ASM"

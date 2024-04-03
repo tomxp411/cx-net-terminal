@@ -44,7 +44,8 @@ ansi_init:
 
     ; set ANSI character set
     lda #7
-    jsr $ff62 ; screen_set_charset
+    jsr $ff62 ; screen_set_charset    
+    rts 
 
 ;
 ; Sets the cursor position
@@ -273,48 +274,56 @@ do_ED:
 
 ansi_cls:
     ; copy start of screen to start addr
-    stz work_col
-    stz work_row
+    stz work_col    ;4
+    stz work_row    ;4
 
     ; copy end of screen to end_addr
-    lda col_count
-    sta end_col
-    lda row_count
-    dec a
-    sta end_row
+    lda col_count   ;4
+    sta end_col     ;4
+    lda row_count   ;4
+    dec a           ;2
+    sta end_row     ;4
 
-    jmp do_erase
+    jmp do_erase    ;3 29 once
 
     ; invalid argument
 +   jmp cmd_done
 
 do_erase:
+    ;debug
+    ;stp
+    ;/debug 
+
     stz vera_dcsel        ; work with data port 0
-    lda work_col
-    asl
-    sta vera_addr0
-    lda work_row
-    clc
-    adc csr_base
-    sta vera_addr1
-    lda csr_bank
-    sta vera_addr2
+    lda work_col    ;4
+    asl             ;2
+    sta vera_addr0  ;4
+    lda work_row    ;4
+    clc             ;2
+    adc csr_base    ;4
+    sta vera_addr1  ;4
+    lda csr_bank    ;4
+    sta vera_addr2  ;4 
 
     ; data to load into VERA
-    ldx cur_char
-    ldy cur_color
+    ldx cur_char    ;4
+    ldy cur_color   ;4
 
     ; erase first row
-    lda col_count
-    sec
-    sbc work_col
+    lda col_count   ;4
+    sec             ;2
+    sbc work_col    ;4  52 per row
 
     ; fill one character cell
-erase_fill_byte
-    stx vera_data0
-    sty vera_data0
-    dec a
-    bne erase_fill_byte
+erase_fill_byte:
+    stx vera_data0      ;4
+    sty vera_data0      ;4
+    dec a               ;2
+    bne erase_fill_byte ;3 13 per character
+
+erase_end_row:
+    ; perform the end of row callback and advance to the next row
+    jsr do_callback
 
     ; 2 to n-1 row
 erase_next_row:
@@ -328,16 +337,33 @@ erase_next_row:
     bcs erase_done
 
     lda col_count
-    jmp erase_fill_byte
+    bra erase_fill_byte
 
-    ;todo: last row
 erase_last_row:
     lda end_col
     ;dec a
     jmp erase_fill_byte
 
 erase_done:
+    ;debug
+    ;stp
+    ;/debug 
+
     jmp cmd_done
+
+do_callback:
+    ; this jumps into user code, allowing the user to pull from the serial 
+    ; buffer during a long screen operation (Clear, Scroll). User must preserve
+    ; .A .X .Y
+    ; be sure to JSR to this routine, and the user must RTS at the end of their
+    ; code. So the RTS will return to whatever called this routine.
+    jmp (callback_addr)
+
+empty_callback:
+    ;debug
+    ;stp
+    ;/debug
+    RTS
 
 ; Reset the terminal sequence buffer after a terminal command
 ; if carry is set, prints the character in .A
@@ -384,28 +410,35 @@ chrout_done:
 
 ; cursor location is in character coordinates
 ; and is converted to memory coordinates in load_addr_vector
-csr_col:       .byte $00 ; column number (addr bits 0-7)
-csr_row:       .byte $00 ; row number (addr bits 8-15)
-csr_bank:       .byte $11 ; auto-increment and addr bit 16.
-csr_base:      .byte $b0 ; base address of screen buffer
+csr_col:       .byte $00  ; KV column number (addr bits 0-7)
+csr_row:       .byte $00  ; KV row number (addr bits 8-15)
+csr_bank:       .byte $11 ; FIXED auto-increment and addr bit 16.
+csr_base:      .byte $b0  ; FIXED base address of screen buffer
 
-cur_color:      .byte $01 ; currrent color attribute
-cur_char:       .byte ' ' ; fill character for clear screen
+cur_color:      .byte $01 ; KV currrent color attribute
+cur_char:       .byte ' ' ; FIXED fill character for clear screen
 
-col_count:    .byte 80 ; default screen width  
-row_count:    .byte 60 ; default screen height
+
+col_count:    .byte 80 ; KV default screen width  
+row_count:    .byte 60 ; KV default screen height
 
 cmd_max = 4
-cmd_params  .byte 0     ; >0 if parsing a terminal sequence
-cmd_0       .byte 0     ; [ or param in non-CSI command
-cmd_1       .byte 0     ; first parameter in CSI
-cmd_2       .byte 0     ; second parameter in CSI
-digit_1     .byte 0     ; character being processed
+cmd_params  .byte 0     ; RAM >0 if parsing a terminal sequence
+cmd_0       .byte 0     ; RAM [ or param in non-CSI command
+cmd_1       .byte 0     ; RAM first parameter in CSI
+cmd_2       .byte 0     ; RAM second parameter in CSI
+digit_1     .byte 0     ; RAM character being processed
 
 ; temp variables
-work_col      .byte 0  ; tracking values for screen clear, scroll
-work_row      .byte 0 
-end_col        .byte 0
-end_row        .byte 0
-mult_1       .byte 0  ; temp slot for multiplication
-mult_2       .byte 0  ; temp slot for multiplication
+work_col      .byte 0  ; TEMP tracking values for screen clear, scroll
+work_row      .byte 0  ; TEMP
+end_col       .byte 0  ; TEMP
+end_row       .byte 0  ; TEMP
+mult_1       .byte 0   ; TEMP temp slot for multiplication
+mult_2       .byte 0   ; TEMP temp slot for multiplication
+
+; this address is called at the end of each row when the screen is being
+; scrolled or cleared (or any other long operation)
+callback_addr:
+    .word empty_callback
+
