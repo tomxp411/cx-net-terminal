@@ -49,8 +49,9 @@ ansi_init:
 
 ;
 ; Sets the cursor position
-; .X Column
-; .Y Row
+; coordinates are zero based (fits with VERA addressing)
+; .X Column (0-79)
+; .Y Row (0-59)
 ; Modifies: None
 locate:
     stx csr_col 
@@ -123,8 +124,8 @@ chrout:
     ;/debug
 
     ; first, test to see if we're in terminal parameter mode
-    ; cmd_params will be > 0
-    ldy cmd_params
+    ; param_count will be > 0
+    ldy param_count
     cpy #cmd_max
     cpy #1
     beq chrout_read_param
@@ -139,7 +140,7 @@ do_control_char:
     ; ESC
     cmp #$1B
     bne +
-    inc cmd_params
+    inc param_count
     jmp chrout_done
 
 +   ; Line Feed    
@@ -161,18 +162,18 @@ do_control_char:
 chrout_read_param:
     cmp #'['
     bne +
-    inc cmd_params
+    inc param_count
     jmp chrout_done
 
 +   ; not a known escape sequence
-    stz cmd_params
+    stz param_count
     jmp just_print
 
 chrout_test_semi:
     cmp #';'
     bne chrout_test_number
     lda #$03
-    sta cmd_params
+    sta param_count
     jmp chrout_done
 
 chrout_test_number:
@@ -189,17 +190,17 @@ chrout_test_number:
     sta digit_1
 
     ; multiply by 10
-    lda cmd_params,Y
+    lda param_count,Y
     asl
     asl
     asl
     sta mult_1
-    lda cmd_params,Y
+    lda param_count,Y
     asl
     clc
     adc mult_1
     adc digit_1
-    sta cmd_params,Y
+    sta param_count,Y
 
     jmp chrout_done
 chrout_not_number:
@@ -224,10 +225,10 @@ do_cmd:
 
 ; Cursor Position
 do_CUP:
-    ldx cmd_2
+    ldx param_2
     beq +
     dex
-+   ldy cmd_1
++   ldy param_1
     beq +
     dey
 +   jsr locate
@@ -236,7 +237,7 @@ do_CUP:
 ; Erase Line
 do_EL:
     ; 0=cursor to end of  line
-    lda cmd_1
+    lda param_1
     bne +
 
     ; copy cursor location to start_addr
@@ -247,6 +248,7 @@ do_EL:
 
     ; copy end of line to end_addr
     lda col_count
+    dec a
     sta end_col
     lda csr_row
     sta end_row
@@ -285,7 +287,7 @@ do_EL:
 
 ; Erase Display
 do_ED:
-    lda cmd_1
+    lda param_1
     ; 0=cursor to end of screen
     bne +
 
@@ -316,7 +318,6 @@ do_ED:
     lda csr_col
     sta end_col
     lda csr_row
-    dec a
     sta end_row
 
     jmp do_erase
@@ -327,81 +328,83 @@ do_ED:
 
 ansi_cls:
     ; copy start of screen to start addr
-    stz start_col    ;4
-    stz start_row    ;4
+    stz start_col
+    stz start_row
 
     ; copy end of screen to end_addr
-    lda col_count   ;4
-    sta end_col     ;4
-    lda row_count   ;4
-    dec a           ;2
-    sta end_row     ;4
+    lda col_count
+    dec a
+    sta end_col
+    lda row_count
+    dec a
+    sta end_row
 
-    jmp do_erase    ;3 29 once
+    jmp do_erase
 
     ; invalid argument
 +   jmp cmd_done
 
+; Erase one or more lines on screen
+; start_row, start_col: the first position to delete
+; end_row, end_col: the last position to delete
+; first row: erases after start_col to end of line
+; betweenrows: erases entire line
+; last row: erases start of line up to end_col
 do_erase:
-    ;debug
-    ;stp
-    ;/debug 
-
-    stz vera_dcsel        ; work with data port 0
-    lda work_col    ;4
-    asl             ;2
-    sta vera_addr0  ;4
-    lda work_row    ;4
-    clc             ;2
-    adc csr_base    ;4
-    sta vera_addr1  ;4
-    lda csr_bank    ;4
-    sta vera_addr2  ;4 
-
     ; data to load into VERA
-    ldx cur_char    ;4
-    ldy cur_color   ;4
+    ldx cur_char    
+    ldy cur_color   
 
-    ; erase first row
-    lda col_count   ;4
-    sec             ;2
-    sbc work_col    ;4  52 per row
+erase_first_line:
+    ; set start address
+    stz vera_dcsel  
+    lda start_col
+    asl             
+    sta vera_addr0  
+    lda work_row    
+    clc             
+    adc csr_base    
+    sta vera_addr1  
+    lda csr_bank    
+    sta vera_addr2  
+    
+    lda end_col     ; number of rows to clear
+    sec
+    sbc start_col
+    inc a
 
-    ; fill one character cell
-erase_fill_byte:
-    stx vera_data0      ;4
-    sty vera_data0      ;4
-    dec a               ;2
-    bne erase_fill_byte ;3 13 per character
+    ; fill one row with space and current color
+    ; VERA should be set to the starting ddress
+    ; .A columns to delete
+erase_fill_line:
+    stx vera_data0      
+    sty vera_data0      
+    dec a               
+    bne erase_fill_line 
+    jsr do_callback  ; give serial driver the chance to empty the FIFO
 
-erase_end_row:
-    ; perform the end of row callback and advance to the next row
-    jsr do_callback
-
-    lda work_row
-    lda work_row
-    beq erase_last_row
-    bcs erase_done
-
-    ; 2 to n-1 row
-erase_next_row:
+    ; set address to start of next row
     stz vera_addr0
     inc vera_addr1
+
+    ;stp
+
+    ; check for last line
+    ; or end of operation
     inc work_row
+    lda work_row
+    cmp end_row
+    beq erase_last_line
+    bcs erase_done 
+    lda col_count ; number of columns to delete
+    bra erase_fill_line    
 
-    lda col_count
-    bra erase_fill_byte
-
-erase_last_row:
-    lda end_col
-    ;dec a
-    jmp erase_fill_byte
+erase_last_line:
+    lda end_col ; for Erase Line, only erase up to cursor
+    inc a
+    bra erase_fill_line
 
 erase_done:
-    ;debug
-    ;stp
-    ;/debug 
-
     jmp cmd_done
 
 do_callback:
@@ -422,10 +425,11 @@ empty_callback:
 ; if carry is set, prints the character in .A
 ; if carry is clear, just exits
 cmd_done:
-    stz cmd_params
-    stz cmd_0 ; ] for CSI, may be number for 2-byte commands
-    stz cmd_1 ; row for CUP, 0=to end, 1=to cursor, 2=all
-    stz cmd_2 ; col for CUP
+    ; reset the parameters to 0 for next time.
+    stz param_count
+    stz param_0
+    stz param_1
+    stz param_2
     jmp chrout_done
 
 ; This actually prints the character to the screen
@@ -437,14 +441,18 @@ just_print:
     inc csr_col     ; moves cursor to the right one position
 
 ; Check the cursor column and row
-; if needed, wrap the cursor to column 1 and advance to next row
+; ANSI does not wrap by default. The last character printed overwrites the 
+; character at the last column.
 ; (todo) Scroll text up if cursor is past the bottom of the screen
 check_bounds:
     lda csr_col
     cmp col_count
     bcc check_row
-    stz csr_col
-    inc csr_row
+    ;stz csr_col
+    lda col_count
+    dec A
+    sta csr_col
+    ;inc csr_row
     jsr load_addr_vector
 check_row:
     lda csr_row
@@ -471,29 +479,28 @@ csr_base:      .byte $b0  ; FIXED base address of screen buffer
 cur_color:      .byte $01 ; KV currrent color attribute
 cur_char:       .byte ' ' ; FIXED fill character for clear screen
 
-
 col_count:    .byte 80 ; KV default screen width  
 row_count:    .byte 60 ; KV default screen height
 
 cmd_max = 4
-cmd_params  .byte 0     ; RAM >0 if parsing a terminal sequence
-cmd_0       .byte 0     ; RAM [ or param in non-CSI command
-cmd_1       .byte 0     ; RAM first parameter in CSI
-cmd_2       .byte 0     ; RAM second parameter in CSI
-digit_1     .byte 0     ; RAM character being processed
+param_count .byte 0     ; >0 if parsing a terminal sequence
+param_0     .byte 0     ; [ or pain non-CSI command
+param_1     .byte 0     ; first parameter in CSI
+param_2     .byte 0     ; second parameter in CSI
+digit_1     .byte 0     ; character being processed
 
-; temp variables
-start_col:
-work_col:      .byte 0  ; TEMP tracking values for screen clear, scroll
-start_row:
-work_row:      .byte 0  ; TEMP
-end_col:       .byte 0  ; TEMP
-end_row:       .byte 0  ; TEMP
-mult_1:       .byte 0   ; TEMP temp slot for multiplication
-mult_2:       .byte 0   ; TEMP temp slot for multiplication
+; variables
+
+start_col:              ; start col for erase/scroll (0-79)
+work_col:      .byte 0  ; current col for erase/scroll (0-79)
+start_row:              ; start row for erase/scroll (0-59)
+work_row:      .byte 0  ; current row for erase/scroll (0-59)
+end_col:       .byte 0  ; end col for erase/scroll (0-79)
+end_row:       .byte 0  ; end row for erase/scroll (0-59)
+mult_1:       .byte 0   ; temp slot for multiplication
+mult_2:       .byte 0   ; temp slot for multiplication
 
 ; this address is called at the end of each row when the screen is being
 ; scrolled or cleared (or any other long operation)
 callback_addr:
     .word empty_callback
-

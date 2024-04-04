@@ -22,10 +22,10 @@ main:
     jsr ansi_init
 
 test_start:
-    ldx start_pos
-    ldy start_pos+1
-    jsr locate
+    lda #$01
+    sta cur_color
 
+    ; get start of test strings
     lda #<str_test
     sta R0
     lda #>str_test
@@ -33,151 +33,172 @@ test_start:
 
 ; Keeps printing text until we reach an empty string.
 print_loop:
+    lda (R0)
+    beq done
+    cmp #1
+    beq draw_test
+
     jsr ansi_print_str
 -   jsr getin
     beq -
+    bra print_loop
 
-    lda (R0)
-    bne print_loop
+; prints the test grid, with column and row headers
+draw_test:
+    lda R0L
+    pha
+    lda R0H
+    pha
+
+    lda #<test_grid
+    sta R0L
+    lda #>test_grid
+    sta R0H
+    jsr ansi_print_str
+
+    pla
+    sta R0H
+    pla
+    sta R0L
+
+    inc R0L
+    bne +
+    inc R0H
++   bra print_loop
+
 done:
+    lda #$61        ; reset the screen to blue
+    sta cur_color   
+
     jsr ansi_cls
     jmp test_start
 
     ; if we ever get here, something has failed
     brk
 
-ansi_callback:
-    RTS
-
 ; end of program (easy to see in MONitor)
 .byte 0,0,0,0
 
-; Test strings
-;.enc "screen"
-start_pos:
-    .byte 5,10
-str_test:
-    .text "|ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQ|",0
-
-str_test_home:
-    ; clear the screen before we get started
+test_grid:
+    .text 27,"[2J"
+    .text 27,"[2H"
+    .text "....,....1....,....2....,....3....,....4....,....5....,....6....,....7....,....8"
+    .text 27,"[19H"
+    .text "....,....1....,....2....,....3....,....4....,....5....,....6....,....7....,....8"
+    .text 27,"[21H"
+    .text "....,....1....,....2....,....3....,....4....,....5....,....6....,....7....,....8"
+    .text 27,"[60;70H"
+    .text "7....,....8"
     .text 27,"[H"
-    .text "1",$0D,$0A
-    .text "2",$0D,$0A
-    .text "3",$0D,$0A
-    .text "4",$0D,$0A
-    .text "5",$0D,$0A
-    .text "6",$0D,$0A
-    .text "7",$0D,$0A
-    .text "8",$0D,$0A
-    .text "9",$0D,$0A
-    .text "10",$0D,$0A
-    .text 27,"[H",$c5," HOME POSITION",$0D,$0A
-    .text 27,"[30;40H",$c5," Row 30 Col 40",$0d,$0a
-    .text 27,"[60;65H",$c5," Row 60 Col 65",$0d,$0a
-    .text 27,"[4;2H",$c5," Row 4 Col 2",$0d,$0a
+    .text "1", $0d,$0a,"2", $0d,$0a,"3", $0d,$0a,"4", $0d,$0a,"5", $0d,$0a
+    .text "6", $0d,$0a,"7", $0d,$0a,"8", $0d,$0a,"9", $0d,$0a,"10",$0d,$0a
+    .text "11",$0d,$0a,"12",$0d,$0a,"13",$0d,$0a,"14",$0d,$0a,"15",$0d,$0a
+    .text "16",$0d,$0a,"17",$0d,$0a,"18",$0d,$0a,"19",$0d,$0a,"20",$0d,$0a
+    .text "21",$0d,$0a,"22",$0d,$0a,"23",$0d,$0a,"24",$0d,$0a,"25",$0d,$0a
+    .text "26",$0d,$0a,"27",$0d,$0a,"28",$0d,$0a,"29",$0d,$0a,"30",$0d,$0a
+    .text "31",$0d,$0a,"32",$0d,$0a,"33",$0d,$0a,"34",$0d,$0a,"35",$0d,$0a
+    .text "36",$0d,$0a,"37",$0d,$0a,"38",$0d,$0a,"39",$0d,$0a,"40",$0d,$0a
+    .text "41",$0d,$0a,"42",$0d,$0a,"43",$0d,$0a,"44",$0d,$0a,"45",$0d,$0a
+    .text "46",$0d,$0a,"47",$0d,$0a,"48",$0d,$0a,"49",$0d,$0a,"50",$0d,$0a
+    .text "51",$0d,$0a,"52",$0d,$0a,"53",$0d,$0a,"54",$0d,$0a,"55",$0d,$0a
+    .text "56",$0d,$0a,"57",$0d,$0a,"58",$0d,$0a,"59",$0d,$0a,"60"
+    .text 27,"[H"
+    .byte 0
+
+; Test strings
+str_test:
+    ; CR and LF test
+    .text 27,"[2J"
+    .text 27,"[H"
+    .text "LF Test +",$0A,"+ this line should be one down, one right",$0d,$0a
+    .text $0d,$0a
+    .text "          <- CR TEST [should be on same line]",$0d 
+    .text "CR TEST ->",$0D,$0A
+    .byte 0 
+
+    ; Position test
+    .byte 1
+    .text 27,"[H",$c5," HOME POSITION ",$0D,$0A
+    .text 27,"[20;40H",$c5," Row 20 Col 40",$0d,$0a
+    .text 27,"[60;80H",$c5
+    .text 27,"[60;65HRow 60 Col 80"
+    .text 27,"[4;5H",$c5," Row 4 Col 5",$0d,$0a
+    .text 27,"[10H+ Line 10, column 1 (no column)"
+    .text 27,"[;40H+ Col 40 (no row)  "
+    .byte 0
+
+    ; no-wrap test
+    .byte 1
+    .text 27,"[2;65HNo-wrap test. ->[This text should not be visible]>"
     .byte 0
 
     .text 27,"[2J"
-    .text 27,"[10HBad escape code tests:",13,10
+    .text 27,"[H"
+    .text 27,"Bad escape code tests:",13,10
     .text 27,"H missing [ in escape code",$0d,$0a
     .text 27,"[Z invalid command in escape code",$0d,$0a
     .byte 0
 
     ; erase display test
-    .text 27,"[2J"
-    .text 27,"[H"
-    .text "1",$0D,$0A
-    .text "2",$0D,$0A
-    .text "3",$0D,$0A
-    .text "4",$0D,$0A
-    .text "5",$0D,$0A
-    .text "6",$0D,$0A
-    .text "7",$0D,$0A
-    .text "8",$0D,$0A
-    .text "9",$0D,$0A
-    .text ".........1.........2.........3.........4.........5.........6.........7.........8"
-    .text "11",$0D,$0A
-    .text ".........1.........2.........3.........4.........5.........6.........7.........8"
-    .text "13",$0D,$0A
-    .text "14",$0D,$0A
-    .text "15",$0D,$0A
-    .text "16",$0D,$0A
-    .text "17",$0D,$0A
-    .text "18",$0D,$0A
-    .text "19",$0D,$0A
-    .text ".........1.........2.........3.........4.........5.........6.........7.........8"
-    .text 27,"[11;16HErasing cursor to end ->xxx"
-    .text 27,"[11;40H[This text should disappear]",0
-    .text 27,"[11;40H"
+    .byte 1
+    .text 27,"[20;20H"
+    .text "ED  cursor to end ->"
+    .text 27,"[20;40H"
+    .text "[This text should disappear]"
+    .byte 0
+    .text 27,"[20;40H"
     .text 27,"[0J"
     .byte 0
 
-    .text 27,"[H"
-    .text "1",$0D,$0A
-    .text "2",$0D,$0A
-    .text "3",$0D,$0A
-    .text "4",$0D,$0A
-    .text "5",$0D,$0A
-    .text "6",$0D,$0A
-    .text "7",$0D,$0A
-    .text "8",$0D,$0A
-    .text "9",$0D,$0A
-    .text ".........1.........2.........3.........4.........5.........6.........7.........8"
-    .text 27,      "[11;40H<- Erasing to cursor"
-    .text 27,"[59;53HThis should remain visible."
+    .byte 1
+    .text 27,"[20;17H"
+    .text "[This should disappear]"
+    .text 27,"[20;40H"
+    .text "<- ED start to cursor",$0D,$0A
+    .text 27,"[60;54H"
+    .text "This should remain visible."
     .byte 0
-    .text 27,"[11;40H"
+    .text 27,"[20;39H"
     .text 27,"[1J"
     .byte 0
 
-    ; erase line tests
     .text 27,"[2J"
-    .text 27,"[10;1H"
-    .text ".........1.........2.........3.........4.........5.........6.........7.........8",13,10
-    .text "     [K  Erase cursor to end of line ->[This text should disappear]",13,10
-    .text ".........1.........2.........3.........4.........5.........6.........7.........8",13,10
-    .byte 0
-    .text 27,"[11;40H"
-    .text 27,"[K"
+    .text 27,"[10;27H   Erase full screen"
+    .text 27,"[11;27H Screen should be clear"
+    .text 27,"[12;27H[Aside from this message]"
     .byte 0
 
+    .byte 1
     ; erase line tests
-    .text 27,"[2J"
-    .text 27,"[10;1H"
-    .text ".........1.........2.........3.........4.........5.........6.........7.........8",13,10
-    .text "     [0K Erase cursor to end of line ->[This text should disappear]",13,10
-    .text ".........1.........2.........3.........4.........5.........6.........7.........8",13,10
+    .text 27,"[20;10H"
+    .text "EL cursor to to end of line ->"
+    .text 27,"[20;40H"
+    .text "[This text should disappear]"
     .byte 0
-    .text 27,"[11;40H"
+    .text 27,"[20;40H"
     .text 27,"[0K"
     .byte 0
 
-    .text 27,"[2J"
-    .text 27,"[10;1H"
-    .text ".........1.........2.........3.........4.........5.........6.........7.........8",13,10
-    .text "       1K  [This text should disappear]<- Erase start of line to cursor",13,10
-    .text ".........1.........2.........3.........4.........5.........6.........7.........8",13,10
+    .text 27,"[20;10H"
+    .text "[This text should disappear]"
+    .text 27,"[20;40H"
+    .text "]<- EL start to cursor"
     .byte 0
-    .text 27,"[11;39H"
+    .text 27,"[20;40H"
     .text 27,"[1K"
     .byte 0
 
-    .text 27,"[2J"
-    .text 27,"[10;1H"
-    .text ".........1.........2.........3.........4.........5.........6.........7.........8",13,10
-    .text "         2K      Erase Entire line. This line should disappear.",13,10
-    .text ".........1.........2.........3.........4.........5.........6.........7.........8",13,10
+    .text 27,"[20H"
+    .text "....,....1....,....2....,....3....,....4....,....5....,....6....,....7....,....8"
+    .text 27,"[20;18H"
+    .text "[EL entire line. This text should disappear]"
     .byte 0
-    .text 27,"[11;40H"
+    .text 27,"[20;10H"
     .text 27,"[2K"
     .byte 0
 
-    .text 27,"[30;31HErase full screen",0
-    .text 27,"[2J"
-    .text 27,"[31;33HScreen cleared",0
-
-    .text 27,"[2;2HPress a key to restart test"
+    .byte 1
+    .text 27,"[29;27HPress a key to restart test"
     .byte 0
 
     ; end of data segment
