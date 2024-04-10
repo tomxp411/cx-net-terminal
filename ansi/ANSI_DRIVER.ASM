@@ -15,6 +15,16 @@ vera_data0 = $9f23    ; VERA data port 0
 vera_data1 = $9f24    ; VERA data port 1
 vera_dcsel = $9f25    ; VERA data select register
 
+jsrfar = $FF6E
+
+bank_ram = $00
+bank_rom = $01
+
+bank_audio = $0A
+ym_init = $C063
+bas_fmnote = $C003
+bas_fmfreq = $c000
+
 ; Zero page registers
 R0      = $02
 R0L     = $02
@@ -45,6 +55,11 @@ ansi_init:
     ; set ANSI character set
     lda #7
     jsr $ff62 ; screen_set_charset    
+
+    ; initialize audio system for the Bell tone
+    jsr jsrfar  ; $FF6E
+    .word ym_init ; $C063
+    .byte bank_audio
     rts 
 
 ;
@@ -52,11 +67,14 @@ ansi_init:
 ; coordinates are zero based (fits with VERA addressing)
 ; .X Column (0-79)
 ; .Y Row (0-59)
-; Modifies: None
+; Modifies: none
 locate:
+    pha
+    jsr csr_blink_off
     stx csr_col 
     sty csr_row
     jsr load_addr_vector
+    pla
     rts
 
 ; 
@@ -137,25 +155,31 @@ chrout:
     jmp just_print
 
 do_control_char:
-    ; ESC
-    cmp #$1B
+    cmp #$1B ; ESC
     bne +
     inc param_count
     jmp chrout_done
 
-+   ; Line Feed    
-    cmp #$0A
++   cmp #$0A ; Line Feed
     bne +
     inc csr_row
     jsr load_addr_vector
     jmp check_bounds
 
-+   ; CR    
-    cmp #$0D ;CR
++   cmp #$0D ;CR
     bne +
     stz csr_col
     jsr load_addr_vector
     jmp check_bounds
+
++   cmp #$07 ; bell
+    bne +
+    jmp do_bell
+
++   cmp #$07 ; bell
+    bne +
+    jmp do_BS
+    jmp do_bell
 
 +   jmp just_print
 
@@ -204,10 +228,10 @@ chrout_test_number:
 
     jmp chrout_done
 chrout_not_number:
-    jmp do_cmd
+    jmp do_CSI
 
 ; execute a terminal command
-do_cmd:
+do_CSI:
     ; Home (set cursor location)
     cmp #'H'
     beq do_CUP
@@ -407,6 +431,30 @@ erase_last_line:
 erase_done:
     jmp cmd_done
 
+do_bell:
+    ; Trigger a note on the YM chip. 
+
+    ; save the current bank
+    lda bank_rom
+    sta bank_rom_save
+
+    lda bank_audio
+    sta bank_rom
+    lda #$00 ; channel 0
+    ldx #$02 ; 512 Hz
+    ldy #$00 ; 
+    clc
+    jsr bas_fmfreq
+    lda bank_rom_save
+    sta bank_rom
+
+do_bs:
+    lda csr_col
+    beq +
+    dec A
+    sta csr_col
++   jmp cmd_done        
+
 do_callback:
     ; this jumps into user code, allowing the user to pull from the serial 
     ; buffer during a long screen operation (Clear, Scroll). User must preserve
@@ -431,6 +479,40 @@ cmd_done:
     stz param_1
     stz param_2
     jmp chrout_done
+
+csr_blink_off:
+    ; restore the saved value to the cursor position
+    rts
+
+csr_blink_on:
+    ; save the attribute at the cursor position and invert the color
+    ;todo
+    rts
+
+csr_blink:
+    ; reverse the state of the character at the cursor position
+    ;todo
+    rts
+
+csr_blink_reset:
+    ; blinks the cursor on
+    ; resets the blink timer
+    ;todo
+    rts
+
+csr_blink_wait:
+    ; checks the clock and blinks if 1/2 second has passed
+    ;todo
+    rts
+
+csr_hide:
+    ; hides the cursor until csr_show has been called
+    ;todo
+    rts
+
+csr_show:
+    ; shows the cursor 
+    ;godo
 
 ; This actually prints the character to the screen
 ; pretty simple after all that other stuff, eh?
@@ -471,16 +553,19 @@ chrout_done:
 
 ; cursor location is in character coordinates
 ; and is converted to memory coordinates in load_addr_vector
-csr_col:       .byte $00  ; KV column number (addr bits 0-7)
-csr_row:       .byte $00  ; KV row number (addr bits 8-15)
-csr_bank:       .byte $11 ; FIXED auto-increment and addr bit 16.
-csr_base:      .byte $b0  ; FIXED base address of screen buffer
+csr_col:       .byte $00  ; column number (addr bits 0-7)
+csr_row:       .byte $00  ; row number (addr bits 8-15)
+csr_bank:       .byte $11 ; auto-increment and addr bit 16.
+csr_base:      .byte $b0  ; base address of screen buffer
 
-cur_color:      .byte $01 ; KV currrent color attribute
-cur_char:       .byte ' ' ; FIXED fill character for clear screen
+cur_color:      .byte $01 ; currrent color attribute
+cur_char:       .byte ' ' ; fill character for clear screen
 
-col_count:    .byte 80 ; KV default screen width  
-row_count:    .byte 60 ; KV default screen height
+col_count:    .byte 80 ; default screen width  
+row_count:    .byte 60 ; default screen height
+
+bank_rom_save:  .byte 0 ; perserve the current ROM bank
+bank_ram_save:  .byte 0 ; preserve the current RAM bank
 
 cmd_max = 4
 param_count .byte 0     ; >0 if parsing a terminal sequence
@@ -499,6 +584,12 @@ end_col:       .byte 0  ; end col for erase/scroll (0-79)
 end_row:       .byte 0  ; end row for erase/scroll (0-59)
 mult_1:       .byte 0   ; temp slot for multiplication
 mult_2:       .byte 0   ; temp slot for multiplication
+
+; cursor blink state
+cbs_next:   .word 0     ; the next time the cursor should blink
+cbs_blink:  .byte 0     ; Bitmask
+                        ; $01 = cursor is blinked on
+                        ; $02 = cursor enabled
 
 ; this address is called at the end of each row when the screen is being
 ; scrolled or cleared (or any other long operation)

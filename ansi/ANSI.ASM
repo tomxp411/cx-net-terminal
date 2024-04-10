@@ -110,12 +110,21 @@ str_test:
     ; CR and LF test
     .text 27,"[2J"
     .text 27,"[H"
-    .text "LF Test +",$0A,"+ this line should be one down, one right",$0d,$0a
+    .text "Control character test"
+    ; LF \
+    ;     \ this line should be one down, one right
+    .text "LF ",$5C,$0A
+    .text           $5C," this line should be one down, one right",$0d,$0a
     .text $0d,$0a
+    ; CR TEST -><- CR TEST [should be on same line]
     .text "          <- CR TEST [should be on same line]",$0d 
     .text "CR TEST ->",$0D,$0A
     .byte 0 
-
+    .text $07,"Ding",$0d,$0a
+    .byte 0
+    .text "Backspace test [fail]"
+    .text $08,$08,$08,$08,$08,"pass",$0d,$0a
+    .byte 0
     ; Position test
     .byte 1
     .text 27,"[H",$c5," HOME POSITION ",$0D,$0A

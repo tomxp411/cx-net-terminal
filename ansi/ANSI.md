@@ -1,45 +1,69 @@
 
 # ANSI Escape Sequences
 
-Note that not all sequences are supported by X16 Terminal. The planned subset is
-the set of commands also supported by MS-DOS ANSI.SYS.
+These are the ANSI escape codes planned for support for v1.0 of the X16 ANSI
+driver.
 
-| Sequence	  | Effect                                            | 
-|-------------|---------------------------------------------------|
-|ESC [ r A	  | Cursor up (CUU)                                   |
-|ESC [ r B	  | Cursor down (CUD)                                 |
-|ESC [ c C	  | Cursor forward (CUF)                              |
-|ESC [ c D	  | Cursor back (CUB)                                 |
-|ESC [ r;c f  | Horizontal and vertical position (HVP)            |
-|ESC [ r;c H  | Cursor position (CUP)                             |
-|ESC [ n J	  | Erase display (ED) (n=0, 2 or n=0, 1, 2)[nb 1]    |
-|ESC [ n K	  | Erase in line (EL) (n=0 or n=0, 1, 2)[nb 1]       |
-|ESC [ n m	  | Select graphic rendition (SGR) (n=0..47)          |
-|ESC [ 6 n	  | Device status report (DSR) requests cursor position, returned as cursor position report (CPR): ESC [ r;c R |
-|ESC [ s	  | Save cursor position (SCP)                        |
-|ESC [ u	  | Restore cursor position (RCP)                     |
+## ASCII Codes
 
-Other sequences will be added as they are needed.
+| Name  | decimal | octal | hex  | C-escape | Ctrl-Key | Description                    |
+| ----- | ------- | ----- | ---- | -------- | -------- | ------------------------------ |
+| `BEL` | 7       | 007   | 0x07 | `\a`     | `^G`     | Terminal bell                  |
+| `BS`  | 8       | 010   | 0x08 | `\b`     | `^H`     | Backspace                      |
+| `HT`  | 9       | 011   | 0x09 | `\t`     | `^I`     | Horizontal TAB                 |
+| `LF`  | 10      | 012   | 0x0A | `\n`     | `^J`     | Linefeed (newline)             |
+| `FF`  | 12      | 014   | 0x0C | `\f`     | `^L`     | Formfeed (also: New page `NP`) |
+| `CR`  | 13      | 015   | 0x0D | `\r`     | `^M`     | Carriage return                |
+| `ESC` | 27      | 033   | 0x1B | `\e`[*](#escape) | `^[` | Escape character           |
+| `DEL` | 127     | 177   | 0x7F | `<none>` | `<none>` | Delete character               |
 
-Standard escape codes are prefixed with `Escape`:
+## Escape Codes
 
-- Ctrl-Key: `^[`
-- Octal: `\033`
-- Unicode: `\u001b`
-- Hexadecimal: `\x1B`
-- Decimal: `27`
+| Done | Sequence	  | Effect                                            | 
+|------|--------------|---------------------------------------------------|
+|      | ESC [ r A	  | Cursor up (CUU)                                   |
+|      | ESC [ r B	  | Cursor down (CUD)                                 |
+|      | ESC [ c C	  | Cursor forward (CUF)                              |
+|      | ESC [ c D	  | Cursor back (CUB)                                 |
+| yes  | ESC [ r;c f  | Horizontal and vertical position (HVP)†           |
+| yes  | ESC [ r;c H  | Cursor position (CUP)†                            |
+| yes  | ESC [ n J	  | Erase display (ED) (n=0, 2 or n=0, 1, 2)[nb 1]    |
+| yes  | ESC [ n K	  | Erase in line (EL) (n=0 or n=0, 1, 2)[nb 1]       |
+|      | ESC [ n m	  | Select graphic rendition (SGR) (n=0..47)          |
+|      | ESC [ 6 n	  | Device status report (DSR) requests cursor position, returned as cursor position report (CPR): ESC [ r;c R |
+|      | ESC [ s	  | Save cursor position (SCP)                        |
+|      | ESC [ u	  | Restore cursor position (RCP)                     |
+|      | ESC 7        | Save cursor position (SCP)                        |
+|      | ESC 8        | Restore cursor position (RCP)                     |
 
-Followed by the command, somtimes delimited by opening square bracket (`[`), known as a Control Sequence Introducer (CSI), optionally followed by arguments and the command itself.
+† HVP and CUP are synonymous in this implementation.
 
-Arguments are delimeted by semi colon (`;`).
+The ANSI escape codes are known as "CSI" sequences. They have the following
+format:
+
+* ESC character:
+    - Decimal: `27`
+    - Ctrl-Key: `^[`
+    - Octal: `\033`
+    - Unicode: `\u001b`
+    - Hexadecimal: `\x1B`
+* [ character (Left bracket)
+* one or more numeric arguments
+  * arguments are separated by ;
+  * missing arguments are treated as a 0
+* command character
 
 For example:
 
-```sh
-\x1b[1;31m  # Set style to bold, red foreground.
+```asm
+$1B,"[10;3H"  ; Moves cursor to row 10, column 3
+$1B,"[10H"  ; Moves cursor to row 10, first column
+$1B,"[;3H"  ; Moves cursor to first row, column 3
 ```
 
 ## Sequences
+
+The following is taken from Wikipedia and describes the ANSI standard.
 
 - `ESC` - sequence starting with `ESC` (`\x1B`)
 - `CSI` - Control Sequence Introducer: sequence starting with `ESC [` or CSI (`\x9B`)
