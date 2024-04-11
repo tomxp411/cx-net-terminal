@@ -34,10 +34,13 @@ test_start:
 ; Keeps printing text until we reach an empty string.
 print_loop:
     lda (R0)
+    cmp #$01
+    bne +
+    jsr draw_test
++   cmp #26 ; end of file marker
     beq done
-    cmp #1
-    beq draw_test
 
+wait_for_key:
     jsr ansi_print_str
 -   jsr getin
     beq -
@@ -64,7 +67,7 @@ draw_test:
     inc R0L
     bne +
     inc R0H
-+   bra print_loop
++   rts
 
 done:
     lda #$61        ; reset the screen to blue
@@ -78,6 +81,9 @@ done:
 
 ; end of program (easy to see in MONitor)
 .byte 0,0,0,0
+
+press_key_text:
+    .text "[Press Any Key]",0
 
 test_grid:
     .text 27,"[2J"
@@ -108,42 +114,84 @@ test_grid:
 ; Test strings
 str_test:
     ; CR and LF test
+    .text 27,"[2J",27,"[H"
+    .text 27,"[2;4H"
+    .text "ANSI Control and Escape Code Demo",$0d,$0a,$0a,$0a
+    .text "This will run several test sequences.",$0d,$0a
+    .text "After each sequence, the test will pause.",$0d,$0a
+    .text "Text on the screen should tell you how",$0d,$0a
+    .text "to interpret each test.",$0d,$0a,$0a
+    .text "For example:",$0d,$0a
+    .text "....,....1....,....2",$0d,$0a
+    .text "    x [x is on column 5]",$0d,$0a
+    .text $0d,$0a
+    .text "If the x is on column 5, then the test passes.",$0d,$0a
+    .byte 10,$0a
+    .text "After confirming each test, press a key",$0d,$0a
+    .text "for the next test.",$0d,$0a
+    .text $0a,$0a
+    .text "[Press a key]"
+    .byte 0
+    .byte 1
     .text 27,"[2J"
     .text 27,"[H"
-    .text "Control character test"
+    .text "Control character test",$0d,$0a,$0a
     ; LF \
     ;     \ this line should be one down, one right
-    .text "LF ",$5C,$0A
-    .text           $5C," this line should be one down, one right",$0d,$0a
-    .text $0d,$0a
+    .text "$10 LF: moves the cursor down one line",$0d,$0a
+    .text "Line 1 ",$5C,$0a
+    .text         $5C," Line 2",$0d,$0a
+    .text "The backslashes should line up."
+    .text $0d,$0a,$0a
+    .byte 0
+    .text "$13 CR: move to start of line",$0d,$0a,$0a
     ; CR TEST -><- CR TEST [should be on same line]
     .text "          <- CR TEST [should be on same line]",$0d 
     .text "CR TEST ->",$0D,$0A
+    .byte $0a,$0a
     .byte 0 
-    .text $07,"Ding",$0d,$0a
+    .text "$07 BELL: Play a tone",$0d,$0a
+    .text $07,"Ding [Pass if you heard a 'ding' sound.]",$0d,$0a
+    .byte $0a,$0a
     .byte 0
-    .text "Backspace test [fail]"
-    .text $08,$08,$08,$08,$08,"pass",$0d,$0a
+    .text "$08 BS: Backspace",$0d,$0a
+    .text "Backspace test [should say 'pass' twice]: failpass"
+    .text $08,$08,$08,$08,$08,$08,$08,$08,"pass",$0d,$0a
+    .byte $0a,$0a
     .byte 0
+    .text "$09 HT: Horizontal tab",$0d,$0a
+    .text "         |         |         |         |",$0d,$0a
+    .text "bars",9,"|should",9,"|line",9,"|up",9,"|",$0d,$0a
+    .byte $0a,$0a
+    .byte 0
+
     ; Position test
     .byte 1
-    .text 27,"[H",$c5," HOME POSITION ",$0D,$0A
+    .text 27,"[H",$c5," HOME POSITION",$0D,$0A
+    .byte 0,1
     .text 27,"[20;40H",$c5," Row 20 Col 40",$0d,$0a
+    .byte 0,1
     .text 27,"[60;80H",$c5
     .text 27,"[60;65HRow 60 Col 80"
+    .byte 0,1
     .text 27,"[4;5H",$c5," Row 4 Col 5",$0d,$0a
+    .byte 0,1
     .text 27,"[10H+ Line 10, column 1 (no column)"
+    .byte 0,1
     .text 27,"[;40H+ Col 40 (no row)  "
     .byte 0
 
     ; no-wrap test
-    .byte 1
-    .text 27,"[2;65HNo-wrap test. ->[This text should not be visible]>"
+    .text 27,"[2J",27,"[H"
+    .text 27,"[2;65HNo-wrap test. -[Not visible]>"
+    .text 27,"[3HNo-Wrap test: > char should be on",$0d,$0A
+    .text "right edge and [Not visible] should not",$0d,$0a
+    .text "be visible.",$0d,$0a
     .byte 0
 
     .text 27,"[2J"
     .text 27,"[H"
-    .text 27,"Bad escape code tests:",13,10
+    .text 27,"Bad escape code tests:",$0d,$0a
     .text 27,"H missing [ in escape code",$0d,$0a
     .text 27,"[Z invalid command in escape code",$0d,$0a
     .byte 0
@@ -211,6 +259,6 @@ str_test:
     .byte 0
 
     ; end of data segment
-    .byte 0,0,0,0
+    .byte 26,0,0,0,0
 
 .include "ANSI_DRIVER.ASM"

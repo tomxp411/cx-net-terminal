@@ -1,7 +1,7 @@
 
 ; 64tass Turbo Assembler Macro V1.59.3120 listing file
 ; 64tass -o ANSI.PRG --list ANSI.LST --cbm-prg ANSI.ASM
-; Wed Apr 10 14:58:37 2024
+; Thu Apr 11 16:31:28 2024
 
 ;Offset	;Hex		;Monitor	;Source
 
@@ -19,248 +19,341 @@
 >0801	0b 08 0a 00 ce 90 3a 9e		.byte $0B,$08,$0A,$00,$CE,$90,$3A,$9E,$24,$38,$31,$30,$00,$00,$00
 >0809	24 38 31 30 00 00 00
 .0810					main:
-.0810	20 db 0e	jsr $0edb	    jsr ansi_init
+.0810	20 ef 11	jsr $11ef	    jsr ansi_init
 .0813					test_start:
 .0813	a9 01		lda #$01	    lda #$01
-.0815	8d 74 11	sta $1174	    sta cur_color
-.0818	a9 62		lda #$62	    lda #<str_test
+.0815	8d 8d 14	sta $148d	    sta cur_color
+.0818	a9 76		lda #$76	    lda #<str_test
 .081a	85 02		sta $02		    sta R0
 .081c	a9 0a		lda #$0a	    lda #>str_test
 .081e	85 03		sta $03		    sta R0+1
 .0820					print_loop:
 .0820	b2 02		lda ($02)	    lda (R0)
-.0822	f0 2d		beq $0851	    beq done
-.0824	c9 01		cmp #$01	    cmp #1
-.0826	f0 0a		beq $0832	    beq draw_test
-.0828	20 2b 0f	jsr $0f2b	    jsr ansi_print_str
-.082b	20 e4 ff	jsr $ffe4	-   jsr getin
-.082e	f0 fb		beq $082b	    beq -
-.0830	80 ee		bra $0820	    bra print_loop
-.0832					draw_test:
-.0832	a5 02		lda $02		    lda R0L
-.0834	48		pha		    pha
-.0835	a5 03		lda $03		    lda R0H
-.0837	48		pha		    pha
-.0838	a9 61		lda #$61	    lda #<test_grid
-.083a	85 02		sta $02		    sta R0L
-.083c	a9 08		lda #$08	    lda #>test_grid
-.083e	85 03		sta $03		    sta R0H
-.0840	20 2b 0f	jsr $0f2b	    jsr ansi_print_str
-.0843	68		pla		    pla
-.0844	85 03		sta $03		    sta R0H
-.0846	68		pla		    pla
-.0847	85 02		sta $02		    sta R0L
-.0849	e6 02		inc $02		    inc R0L
-.084b	d0 02		bne $084f	    bne +
-.084d	e6 03		inc $03		    inc R0H
-.084f	80 cf		bra $0820	+   bra print_loop
-.0851					done:
-.0851	a9 61		lda #$61	    lda #$61        ; reset the screen to blue
-.0853	8d 74 11	sta $1174	    sta cur_color
-.0856	20 91 10	jsr $1091	    jsr ansi_cls
-.0859	4c 13 08	jmp $0813	    jmp test_start
-.085c	00		brk #		    brk
->085d	00 00 00 00			.byte 0,0,0,0
-.0861					test_grid:
->0861	1b 5b 32 4a			    .text 27,"[2J"
->0865	1b 5b 32 48			    .text 27,"[2H"
->0869	2e 2e 2e 2e 2c 2e 2e 2e		    .text "....,....1....,....2....,....3....,....4....,....5....,....6....,....7....,....8"
->0871	2e 31 2e 2e 2e 2e 2c 2e 2e 2e 2e 32 2e 2e 2e 2e
->0881	2c 2e 2e 2e 2e 33 2e 2e 2e 2e 2c 2e 2e 2e 2e 34
->0891	2e 2e 2e 2e 2c 2e 2e 2e 2e 35 2e 2e 2e 2e 2c 2e
->08a1	2e 2e 2e 36 2e 2e 2e 2e 2c 2e 2e 2e 2e 37 2e 2e
->08b1	2e 2e 2c 2e 2e 2e 2e 38
->08b9	1b 5b 31 39 48			    .text 27,"[19H"
->08be	2e 2e 2e 2e 2c 2e 2e 2e		    .text "....,....1....,....2....,....3....,....4....,....5....,....6....,....7....,....8"
->08c6	2e 31 2e 2e 2e 2e 2c 2e 2e 2e 2e 32 2e 2e 2e 2e
->08d6	2c 2e 2e 2e 2e 33 2e 2e 2e 2e 2c 2e 2e 2e 2e 34
->08e6	2e 2e 2e 2e 2c 2e 2e 2e 2e 35 2e 2e 2e 2e 2c 2e
->08f6	2e 2e 2e 36 2e 2e 2e 2e 2c 2e 2e 2e 2e 37 2e 2e
->0906	2e 2e 2c 2e 2e 2e 2e 38
->090e	1b 5b 32 31 48			    .text 27,"[21H"
->0913	2e 2e 2e 2e 2c 2e 2e 2e		    .text "....,....1....,....2....,....3....,....4....,....5....,....6....,....7....,....8"
->091b	2e 31 2e 2e 2e 2e 2c 2e 2e 2e 2e 32 2e 2e 2e 2e
->092b	2c 2e 2e 2e 2e 33 2e 2e 2e 2e 2c 2e 2e 2e 2e 34
->093b	2e 2e 2e 2e 2c 2e 2e 2e 2e 35 2e 2e 2e 2e 2c 2e
->094b	2e 2e 2e 36 2e 2e 2e 2e 2c 2e 2e 2e 2e 37 2e 2e
->095b	2e 2e 2c 2e 2e 2e 2e 38
->0963	1b 5b 36 30 3b 37 30 48		    .text 27,"[60;70H"
->096b	37 2e 2e 2e 2e 2c 2e 2e		    .text "7....,....8"
->0973	2e 2e 38
->0976	1b 5b 48			    .text 27,"[H"
->0979	31 0d 0a 32 0d 0a 33 0d		    .text "1", $0d,$0a,"2", $0d,$0a,"3", $0d,$0a,"4", $0d,$0a,"5", $0d,$0a
->0981	0a 34 0d 0a 35 0d 0a
->0988	36 0d 0a 37 0d 0a 38 0d		    .text "6", $0d,$0a,"7", $0d,$0a,"8", $0d,$0a,"9", $0d,$0a,"10",$0d,$0a
->0990	0a 39 0d 0a 31 30 0d 0a
->0998	31 31 0d 0a 31 32 0d 0a		    .text "11",$0d,$0a,"12",$0d,$0a,"13",$0d,$0a,"14",$0d,$0a,"15",$0d,$0a
->09a0	31 33 0d 0a 31 34 0d 0a 31 35 0d 0a
->09ac	31 36 0d 0a 31 37 0d 0a		    .text "16",$0d,$0a,"17",$0d,$0a,"18",$0d,$0a,"19",$0d,$0a,"20",$0d,$0a
->09b4	31 38 0d 0a 31 39 0d 0a 32 30 0d 0a
->09c0	32 31 0d 0a 32 32 0d 0a		    .text "21",$0d,$0a,"22",$0d,$0a,"23",$0d,$0a,"24",$0d,$0a,"25",$0d,$0a
->09c8	32 33 0d 0a 32 34 0d 0a 32 35 0d 0a
->09d4	32 36 0d 0a 32 37 0d 0a		    .text "26",$0d,$0a,"27",$0d,$0a,"28",$0d,$0a,"29",$0d,$0a,"30",$0d,$0a
->09dc	32 38 0d 0a 32 39 0d 0a 33 30 0d 0a
->09e8	33 31 0d 0a 33 32 0d 0a		    .text "31",$0d,$0a,"32",$0d,$0a,"33",$0d,$0a,"34",$0d,$0a,"35",$0d,$0a
->09f0	33 33 0d 0a 33 34 0d 0a 33 35 0d 0a
->09fc	33 36 0d 0a 33 37 0d 0a		    .text "36",$0d,$0a,"37",$0d,$0a,"38",$0d,$0a,"39",$0d,$0a,"40",$0d,$0a
->0a04	33 38 0d 0a 33 39 0d 0a 34 30 0d 0a
->0a10	34 31 0d 0a 34 32 0d 0a		    .text "41",$0d,$0a,"42",$0d,$0a,"43",$0d,$0a,"44",$0d,$0a,"45",$0d,$0a
->0a18	34 33 0d 0a 34 34 0d 0a 34 35 0d 0a
->0a24	34 36 0d 0a 34 37 0d 0a		    .text "46",$0d,$0a,"47",$0d,$0a,"48",$0d,$0a,"49",$0d,$0a,"50",$0d,$0a
->0a2c	34 38 0d 0a 34 39 0d 0a 35 30 0d 0a
->0a38	35 31 0d 0a 35 32 0d 0a		    .text "51",$0d,$0a,"52",$0d,$0a,"53",$0d,$0a,"54",$0d,$0a,"55",$0d,$0a
->0a40	35 33 0d 0a 35 34 0d 0a 35 35 0d 0a
->0a4c	35 36 0d 0a 35 37 0d 0a		    .text "56",$0d,$0a,"57",$0d,$0a,"58",$0d,$0a,"59",$0d,$0a,"60"
->0a54	35 38 0d 0a 35 39 0d 0a 36 30
->0a5e	1b 5b 48			    .text 27,"[H"
->0a61	00				    .byte 0
-.0a62					str_test:
->0a62	1b 5b 32 4a			    .text 27,"[2J"
->0a66	1b 5b 48			    .text 27,"[H"
->0a69	43 6f 6e 74 72 6f 6c 20		    .text "Control character test"
->0a71	63 68 61 72 61 63 74 65 72 20 74 65 73 74
->0a7f	4c 46 20 5c 0a			    .text "LF ",$5C,$0A
->0a84	5c 20 74 68 69 73 20 6c		    .text           $5C," this line should be one down, one right",$0d,$0a
->0a8c	69 6e 65 20 73 68 6f 75 6c 64 20 62 65 20 6f 6e
->0a9c	65 20 64 6f 77 6e 2c 20 6f 6e 65 20 72 69 67 68
->0aac	74 0d 0a
->0aaf	0d 0a				    .text $0d,$0a
->0ab1	20 20 20 20 20 20 20 20		    .text "          <- CR TEST [should be on same line]",$0d
->0ab9	20 20 3c 2d 20 43 52 20 54 45 53 54 20 5b 73 68
->0ac9	6f 75 6c 64 20 62 65 20 6f 6e 20 73 61 6d 65 20
->0ad9	6c 69 6e 65 5d 0d
->0adf	43 52 20 54 45 53 54 20		    .text "CR TEST ->",$0D,$0A
->0ae7	2d 3e 0d 0a
->0aeb	00				    .byte 0
->0aec	07 44 69 6e 67 0d 0a		    .text $07,"Ding",$0d,$0a
->0af3	00				    .byte 0
->0af4	42 61 63 6b 73 70 61 63		    .text "Backspace test [fail]"
->0afc	65 20 74 65 73 74 20 5b 66 61 69 6c 5d
->0b09	08 08 08 08 08 70 61 73		    .text $08,$08,$08,$08,$08,"pass",$0d,$0a
->0b11	73 0d 0a
->0b14	00				    .byte 0
->0b15	01				    .byte 1
->0b16	1b 5b 48 c5 20 48 4f 4d		    .text 27,"[H",$c5," HOME POSITION ",$0D,$0A
->0b1e	45 20 50 4f 53 49 54 49 4f 4e 20 0d 0a
->0b2b	1b 5b 32 30 3b 34 30 48		    .text 27,"[20;40H",$c5," Row 20 Col 40",$0d,$0a
->0b33	c5 20 52 6f 77 20 32 30 20 43 6f 6c 20 34 30 0d
->0b43	0a
->0b44	1b 5b 36 30 3b 38 30 48		    .text 27,"[60;80H",$c5
->0b4c	c5
->0b4d	1b 5b 36 30 3b 36 35 48		    .text 27,"[60;65HRow 60 Col 80"
->0b55	52 6f 77 20 36 30 20 43 6f 6c 20 38 30
->0b62	1b 5b 34 3b 35 48 c5 20		    .text 27,"[4;5H",$c5," Row 4 Col 5",$0d,$0a
->0b6a	52 6f 77 20 34 20 43 6f 6c 20 35 0d 0a
->0b77	1b 5b 31 30 48 2b 20 4c		    .text 27,"[10H+ Line 10, column 1 (no column)"
->0b7f	69 6e 65 20 31 30 2c 20 63 6f 6c 75 6d 6e 20 31
->0b8f	20 28 6e 6f 20 63 6f 6c 75 6d 6e 29
->0b9b	1b 5b 3b 34 30 48 2b 20		    .text 27,"[;40H+ Col 40 (no row)  "
->0ba3	43 6f 6c 20 34 30 20 28 6e 6f 20 72 6f 77 29 20
->0bb3	20
->0bb4	00				    .byte 0
->0bb5	01				    .byte 1
->0bb6	1b 5b 32 3b 36 35 48 4e		    .text 27,"[2;65HNo-wrap test. ->[This text should not be visible]>"
->0bbe	6f 2d 77 72 61 70 20 74 65 73 74 2e 20 2d 3e 5b
->0bce	54 68 69 73 20 74 65 78 74 20 73 68 6f 75 6c 64
->0bde	20 6e 6f 74 20 62 65 20 76 69 73 69 62 6c 65 5d
->0bee	3e
->0bef	00				    .byte 0
->0bf0	1b 5b 32 4a			    .text 27,"[2J"
->0bf4	1b 5b 48			    .text 27,"[H"
->0bf7	1b 42 61 64 20 65 73 63		    .text 27,"Bad escape code tests:",13,10
->0bff	61 70 65 20 63 6f 64 65 20 74 65 73 74 73 3a 0d
->0c0f	0a
->0c10	1b 48 20 6d 69 73 73 69		    .text 27,"H missing [ in escape code",$0d,$0a
->0c18	6e 67 20 5b 20 69 6e 20 65 73 63 61 70 65 20 63
->0c28	6f 64 65 0d 0a
->0c2d	1b 5b 5a 20 69 6e 76 61		    .text 27,"[Z invalid command in escape code",$0d,$0a
->0c35	6c 69 64 20 63 6f 6d 6d 61 6e 64 20 69 6e 20 65
->0c45	73 63 61 70 65 20 63 6f 64 65 0d 0a
->0c51	00				    .byte 0
->0c52	01				    .byte 1
->0c53	1b 5b 32 30 3b 32 30 48		    .text 27,"[20;20H"
->0c5b	45 44 20 20 63 75 72 73		    .text "ED  cursor to end ->"
->0c63	6f 72 20 74 6f 20 65 6e 64 20 2d 3e
->0c6f	1b 5b 32 30 3b 34 30 48		    .text 27,"[20;40H"
->0c77	5b 54 68 69 73 20 74 65		    .text "[This text should disappear]"
->0c7f	78 74 20 73 68 6f 75 6c 64 20 64 69 73 61 70 70
->0c8f	65 61 72 5d
->0c93	00				    .byte 0
->0c94	1b 5b 32 30 3b 34 30 48		    .text 27,"[20;40H"
->0c9c	1b 5b 30 4a			    .text 27,"[0J"
->0ca0	00				    .byte 0
->0ca1	01				    .byte 1
->0ca2	1b 5b 32 30 3b 31 37 48		    .text 27,"[20;17H"
->0caa	5b 54 68 69 73 20 73 68		    .text "[This should disappear]"
->0cb2	6f 75 6c 64 20 64 69 73 61 70 70 65 61 72 5d
->0cc1	1b 5b 32 30 3b 34 30 48		    .text 27,"[20;40H"
->0cc9	3c 2d 20 45 44 20 73 74		    .text "<- ED start to cursor",$0D,$0A
->0cd1	61 72 74 20 74 6f 20 63 75 72 73 6f 72 0d 0a
->0ce0	1b 5b 36 30 3b 35 34 48		    .text 27,"[60;54H"
->0ce8	54 68 69 73 20 73 68 6f		    .text "This should remain visible."
->0cf0	75 6c 64 20 72 65 6d 61 69 6e 20 76 69 73 69 62
->0d00	6c 65 2e
->0d03	00				    .byte 0
->0d04	1b 5b 32 30 3b 33 39 48		    .text 27,"[20;39H"
->0d0c	1b 5b 31 4a			    .text 27,"[1J"
->0d10	00				    .byte 0
->0d11	1b 5b 32 4a			    .text 27,"[2J"
->0d15	1b 5b 31 30 3b 32 37 48		    .text 27,"[10;27H   Erase full screen"
->0d1d	20 20 20 45 72 61 73 65 20 66 75 6c 6c 20 73 63
->0d2d	72 65 65 6e
->0d31	1b 5b 31 31 3b 32 37 48		    .text 27,"[11;27H Screen should be clear"
->0d39	20 53 63 72 65 65 6e 20 73 68 6f 75 6c 64 20 62
->0d49	65 20 63 6c 65 61 72
->0d50	1b 5b 31 32 3b 32 37 48		    .text 27,"[12;27H[Aside from this message]"
->0d58	5b 41 73 69 64 65 20 66 72 6f 6d 20 74 68 69 73
->0d68	20 6d 65 73 73 61 67 65 5d
+.0822	c9 01		cmp #$01	    cmp #$01
+.0824	d0 03		bne $0829	    bne +
+.0826	20 37 08	jsr $0837	    jsr draw_test
+.0829	c9 1a		cmp #$1a	+   cmp #26 ; end of file marker
+.082b	f0 28		beq $0855	    beq done
+.082d					wait_for_key:
+.082d	20 48 12	jsr $1248	    jsr ansi_print_str
+.0830	20 e4 ff	jsr $ffe4	-   jsr getin
+.0833	f0 fb		beq $0830	    beq -
+.0835	80 e9		bra $0820	    bra print_loop
+.0837					draw_test:
+.0837	a5 02		lda $02		    lda R0L
+.0839	48		pha		    pha
+.083a	a5 03		lda $03		    lda R0H
+.083c	48		pha		    pha
+.083d	a9 75		lda #$75	    lda #<test_grid
+.083f	85 02		sta $02		    sta R0L
+.0841	a9 08		lda #$08	    lda #>test_grid
+.0843	85 03		sta $03		    sta R0H
+.0845	20 48 12	jsr $1248	    jsr ansi_print_str
+.0848	68		pla		    pla
+.0849	85 03		sta $03		    sta R0H
+.084b	68		pla		    pla
+.084c	85 02		sta $02		    sta R0L
+.084e	e6 02		inc $02		    inc R0L
+.0850	d0 02		bne $0854	    bne +
+.0852	e6 03		inc $03		    inc R0H
+.0854	60		rts		+   rts
+.0855					done:
+.0855	a9 61		lda #$61	    lda #$61        ; reset the screen to blue
+.0857	8d 8d 14	sta $148d	    sta cur_color
+.085a	20 ab 13	jsr $13ab	    jsr ansi_cls
+.085d	4c 13 08	jmp $0813	    jmp test_start
+.0860	00		brk #		    brk
+>0861	00 00 00 00			.byte 0,0,0,0
+.0865					press_key_text:
+>0865	5b 50 72 65 73 73 20 41		    .text "[Press Any Key]",0
+>086d	6e 79 20 4b 65 79 5d 00
+.0875					test_grid:
+>0875	1b 5b 32 4a			    .text 27,"[2J"
+>0879	1b 5b 32 48			    .text 27,"[2H"
+>087d	2e 2e 2e 2e 2c 2e 2e 2e		    .text "....,....1....,....2....,....3....,....4....,....5....,....6....,....7....,....8"
+>0885	2e 31 2e 2e 2e 2e 2c 2e 2e 2e 2e 32 2e 2e 2e 2e
+>0895	2c 2e 2e 2e 2e 33 2e 2e 2e 2e 2c 2e 2e 2e 2e 34
+>08a5	2e 2e 2e 2e 2c 2e 2e 2e 2e 35 2e 2e 2e 2e 2c 2e
+>08b5	2e 2e 2e 36 2e 2e 2e 2e 2c 2e 2e 2e 2e 37 2e 2e
+>08c5	2e 2e 2c 2e 2e 2e 2e 38
+>08cd	1b 5b 31 39 48			    .text 27,"[19H"
+>08d2	2e 2e 2e 2e 2c 2e 2e 2e		    .text "....,....1....,....2....,....3....,....4....,....5....,....6....,....7....,....8"
+>08da	2e 31 2e 2e 2e 2e 2c 2e 2e 2e 2e 32 2e 2e 2e 2e
+>08ea	2c 2e 2e 2e 2e 33 2e 2e 2e 2e 2c 2e 2e 2e 2e 34
+>08fa	2e 2e 2e 2e 2c 2e 2e 2e 2e 35 2e 2e 2e 2e 2c 2e
+>090a	2e 2e 2e 36 2e 2e 2e 2e 2c 2e 2e 2e 2e 37 2e 2e
+>091a	2e 2e 2c 2e 2e 2e 2e 38
+>0922	1b 5b 32 31 48			    .text 27,"[21H"
+>0927	2e 2e 2e 2e 2c 2e 2e 2e		    .text "....,....1....,....2....,....3....,....4....,....5....,....6....,....7....,....8"
+>092f	2e 31 2e 2e 2e 2e 2c 2e 2e 2e 2e 32 2e 2e 2e 2e
+>093f	2c 2e 2e 2e 2e 33 2e 2e 2e 2e 2c 2e 2e 2e 2e 34
+>094f	2e 2e 2e 2e 2c 2e 2e 2e 2e 35 2e 2e 2e 2e 2c 2e
+>095f	2e 2e 2e 36 2e 2e 2e 2e 2c 2e 2e 2e 2e 37 2e 2e
+>096f	2e 2e 2c 2e 2e 2e 2e 38
+>0977	1b 5b 36 30 3b 37 30 48		    .text 27,"[60;70H"
+>097f	37 2e 2e 2e 2e 2c 2e 2e		    .text "7....,....8"
+>0987	2e 2e 38
+>098a	1b 5b 48			    .text 27,"[H"
+>098d	31 0d 0a 32 0d 0a 33 0d		    .text "1", $0d,$0a,"2", $0d,$0a,"3", $0d,$0a,"4", $0d,$0a,"5", $0d,$0a
+>0995	0a 34 0d 0a 35 0d 0a
+>099c	36 0d 0a 37 0d 0a 38 0d		    .text "6", $0d,$0a,"7", $0d,$0a,"8", $0d,$0a,"9", $0d,$0a,"10",$0d,$0a
+>09a4	0a 39 0d 0a 31 30 0d 0a
+>09ac	31 31 0d 0a 31 32 0d 0a		    .text "11",$0d,$0a,"12",$0d,$0a,"13",$0d,$0a,"14",$0d,$0a,"15",$0d,$0a
+>09b4	31 33 0d 0a 31 34 0d 0a 31 35 0d 0a
+>09c0	31 36 0d 0a 31 37 0d 0a		    .text "16",$0d,$0a,"17",$0d,$0a,"18",$0d,$0a,"19",$0d,$0a,"20",$0d,$0a
+>09c8	31 38 0d 0a 31 39 0d 0a 32 30 0d 0a
+>09d4	32 31 0d 0a 32 32 0d 0a		    .text "21",$0d,$0a,"22",$0d,$0a,"23",$0d,$0a,"24",$0d,$0a,"25",$0d,$0a
+>09dc	32 33 0d 0a 32 34 0d 0a 32 35 0d 0a
+>09e8	32 36 0d 0a 32 37 0d 0a		    .text "26",$0d,$0a,"27",$0d,$0a,"28",$0d,$0a,"29",$0d,$0a,"30",$0d,$0a
+>09f0	32 38 0d 0a 32 39 0d 0a 33 30 0d 0a
+>09fc	33 31 0d 0a 33 32 0d 0a		    .text "31",$0d,$0a,"32",$0d,$0a,"33",$0d,$0a,"34",$0d,$0a,"35",$0d,$0a
+>0a04	33 33 0d 0a 33 34 0d 0a 33 35 0d 0a
+>0a10	33 36 0d 0a 33 37 0d 0a		    .text "36",$0d,$0a,"37",$0d,$0a,"38",$0d,$0a,"39",$0d,$0a,"40",$0d,$0a
+>0a18	33 38 0d 0a 33 39 0d 0a 34 30 0d 0a
+>0a24	34 31 0d 0a 34 32 0d 0a		    .text "41",$0d,$0a,"42",$0d,$0a,"43",$0d,$0a,"44",$0d,$0a,"45",$0d,$0a
+>0a2c	34 33 0d 0a 34 34 0d 0a 34 35 0d 0a
+>0a38	34 36 0d 0a 34 37 0d 0a		    .text "46",$0d,$0a,"47",$0d,$0a,"48",$0d,$0a,"49",$0d,$0a,"50",$0d,$0a
+>0a40	34 38 0d 0a 34 39 0d 0a 35 30 0d 0a
+>0a4c	35 31 0d 0a 35 32 0d 0a		    .text "51",$0d,$0a,"52",$0d,$0a,"53",$0d,$0a,"54",$0d,$0a,"55",$0d,$0a
+>0a54	35 33 0d 0a 35 34 0d 0a 35 35 0d 0a
+>0a60	35 36 0d 0a 35 37 0d 0a		    .text "56",$0d,$0a,"57",$0d,$0a,"58",$0d,$0a,"59",$0d,$0a,"60"
+>0a68	35 38 0d 0a 35 39 0d 0a 36 30
+>0a72	1b 5b 48			    .text 27,"[H"
+>0a75	00				    .byte 0
+.0a76					str_test:
+>0a76	1b 5b 32 4a 1b 5b 48		    .text 27,"[2J",27,"[H"
+>0a7d	1b 5b 32 3b 34 48		    .text 27,"[2;4H"
+>0a83	41 4e 53 49 20 43 6f 6e		    .text "ANSI Control and Escape Code Demo",$0d,$0a,$0a,$0a
+>0a8b	74 72 6f 6c 20 61 6e 64 20 45 73 63 61 70 65 20
+>0a9b	43 6f 64 65 20 44 65 6d 6f 0d 0a 0a 0a
+>0aa8	54 68 69 73 20 77 69 6c		    .text "This will run several test sequences.",$0d,$0a
+>0ab0	6c 20 72 75 6e 20 73 65 76 65 72 61 6c 20 74 65
+>0ac0	73 74 20 73 65 71 75 65 6e 63 65 73 2e 0d 0a
+>0acf	41 66 74 65 72 20 65 61		    .text "After each sequence, the test will pause.",$0d,$0a
+>0ad7	63 68 20 73 65 71 75 65 6e 63 65 2c 20 74 68 65
+>0ae7	20 74 65 73 74 20 77 69 6c 6c 20 70 61 75 73 65
+>0af7	2e 0d 0a
+>0afa	54 65 78 74 20 6f 6e 20		    .text "Text on the screen should tell you how",$0d,$0a
+>0b02	74 68 65 20 73 63 72 65 65 6e 20 73 68 6f 75 6c
+>0b12	64 20 74 65 6c 6c 20 79 6f 75 20 68 6f 77 0d 0a
+>0b22	74 6f 20 69 6e 74 65 72		    .text "to interpret each test.",$0d,$0a,$0a
+>0b2a	70 72 65 74 20 65 61 63 68 20 74 65 73 74 2e 0d
+>0b3a	0a 0a
+>0b3c	46 6f 72 20 65 78 61 6d		    .text "For example:",$0d,$0a
+>0b44	70 6c 65 3a 0d 0a
+>0b4a	2e 2e 2e 2e 2c 2e 2e 2e		    .text "....,....1....,....2",$0d,$0a
+>0b52	2e 31 2e 2e 2e 2e 2c 2e 2e 2e 2e 32 0d 0a
+>0b60	20 20 20 20 78 20 5b 78		    .text "    x [x is on column 5]",$0d,$0a
+>0b68	20 69 73 20 6f 6e 20 63 6f 6c 75 6d 6e 20 35 5d
+>0b78	0d 0a
+>0b7a	0d 0a				    .text $0d,$0a
+>0b7c	49 66 20 74 68 65 20 78		    .text "If the x is on column 5, then the test passes.",$0d,$0a
+>0b84	20 69 73 20 6f 6e 20 63 6f 6c 75 6d 6e 20 35 2c
+>0b94	20 74 68 65 6e 20 74 68 65 20 74 65 73 74 20 70
+>0ba4	61 73 73 65 73 2e 0d 0a
+>0bac	0a 0a				    .byte 10,$0a
+>0bae	41 66 74 65 72 20 63 6f		    .text "After confirming each test, press a key",$0d,$0a
+>0bb6	6e 66 69 72 6d 69 6e 67 20 65 61 63 68 20 74 65
+>0bc6	73 74 2c 20 70 72 65 73 73 20 61 20 6b 65 79 0d
+>0bd6	0a
+>0bd7	66 6f 72 20 74 68 65 20		    .text "for the next test.",$0d,$0a
+>0bdf	6e 65 78 74 20 74 65 73 74 2e 0d 0a
+>0beb	0a 0a				    .text $0a,$0a
+>0bed	5b 50 72 65 73 73 20 61		    .text "[Press a key]"
+>0bf5	20 6b 65 79 5d
+>0bfa	00				    .byte 0
+>0bfb	01				    .byte 1
+>0bfc	1b 5b 32 4a			    .text 27,"[2J"
+>0c00	1b 5b 48			    .text 27,"[H"
+>0c03	43 6f 6e 74 72 6f 6c 20		    .text "Control character test",$0d,$0a,$0a
+>0c0b	63 68 61 72 61 63 74 65 72 20 74 65 73 74 0d 0a
+>0c1b	0a
+>0c1c	24 31 30 20 4c 46 3a 20		    .text "$10 LF: moves the cursor down one line",$0d,$0a
+>0c24	6d 6f 76 65 73 20 74 68 65 20 63 75 72 73 6f 72
+>0c34	20 64 6f 77 6e 20 6f 6e 65 20 6c 69 6e 65 0d 0a
+>0c44	4c 69 6e 65 20 31 20 5c		    .text "Line 1 ",$5C,$0a
+>0c4c	0a
+>0c4d	5c 20 4c 69 6e 65 20 32		    .text         $5C," Line 2",$0d,$0a
+>0c55	0d 0a
+>0c57	54 68 65 20 62 61 63 6b		    .text "The backslashes should line up."
+>0c5f	73 6c 61 73 68 65 73 20 73 68 6f 75 6c 64 20 6c
+>0c6f	69 6e 65 20 75 70 2e
+>0c76	0d 0a 0a			    .text $0d,$0a,$0a
+>0c79	00				    .byte 0
+>0c7a	24 31 33 20 43 52 3a 20		    .text "$13 CR: move to start of line",$0d,$0a,$0a
+>0c82	6d 6f 76 65 20 74 6f 20 73 74 61 72 74 20 6f 66
+>0c92	20 6c 69 6e 65 0d 0a 0a
+>0c9a	20 20 20 20 20 20 20 20		    .text "          <- CR TEST [should be on same line]",$0d
+>0ca2	20 20 3c 2d 20 43 52 20 54 45 53 54 20 5b 73 68
+>0cb2	6f 75 6c 64 20 62 65 20 6f 6e 20 73 61 6d 65 20
+>0cc2	6c 69 6e 65 5d 0d
+>0cc8	43 52 20 54 45 53 54 20		    .text "CR TEST ->",$0D,$0A
+>0cd0	2d 3e 0d 0a
+>0cd4	0a 0a				    .byte $0a,$0a
+>0cd6	00				    .byte 0
+>0cd7	24 30 37 20 42 45 4c 4c		    .text "$07 BELL: Play a tone",$0d,$0a
+>0cdf	3a 20 50 6c 61 79 20 61 20 74 6f 6e 65 0d 0a
+>0cee	07 44 69 6e 67 20 5b 50		    .text $07,"Ding [Pass if you heard a 'ding' sound.]",$0d,$0a
+>0cf6	61 73 73 20 69 66 20 79 6f 75 20 68 65 61 72 64
+>0d06	20 61 20 27 64 69 6e 67 27 20 73 6f 75 6e 64 2e
+>0d16	5d 0d 0a
+>0d19	0a 0a				    .byte $0a,$0a
+>0d1b	00				    .byte 0
+>0d1c	24 30 38 20 42 53 3a 20		    .text "$08 BS: Backspace",$0d,$0a
+>0d24	42 61 63 6b 73 70 61 63 65 0d 0a
+>0d2f	42 61 63 6b 73 70 61 63		    .text "Backspace test [should say 'pass' twice]: failpass"
+>0d37	65 20 74 65 73 74 20 5b 73 68 6f 75 6c 64 20 73
+>0d47	61 79 20 27 70 61 73 73 27 20 74 77 69 63 65 5d
+>0d57	3a 20 66 61 69 6c 70 61 73 73
+>0d61	08 08 08 08 08 08 08 08		    .text $08,$08,$08,$08,$08,$08,$08,$08,"pass",$0d,$0a
+>0d69	70 61 73 73 0d 0a
+>0d6f	0a 0a				    .byte $0a,$0a
 >0d71	00				    .byte 0
->0d72	01				    .byte 1
->0d73	1b 5b 32 30 3b 31 30 48		    .text 27,"[20;10H"
->0d7b	45 4c 20 63 75 72 73 6f		    .text "EL cursor to to end of line ->"
->0d83	72 20 74 6f 20 74 6f 20 65 6e 64 20 6f 66 20 6c
->0d93	69 6e 65 20 2d 3e
->0d99	1b 5b 32 30 3b 34 30 48		    .text 27,"[20;40H"
->0da1	5b 54 68 69 73 20 74 65		    .text "[This text should disappear]"
->0da9	78 74 20 73 68 6f 75 6c 64 20 64 69 73 61 70 70
->0db9	65 61 72 5d
->0dbd	00				    .byte 0
->0dbe	1b 5b 32 30 3b 34 30 48		    .text 27,"[20;40H"
->0dc6	1b 5b 30 4b			    .text 27,"[0K"
->0dca	00				    .byte 0
->0dcb	1b 5b 32 30 3b 31 30 48		    .text 27,"[20;10H"
->0dd3	5b 54 68 69 73 20 74 65		    .text "[This text should disappear]"
->0ddb	78 74 20 73 68 6f 75 6c 64 20 64 69 73 61 70 70
->0deb	65 61 72 5d
->0def	1b 5b 32 30 3b 34 30 48		    .text 27,"[20;40H"
->0df7	5d 3c 2d 20 45 4c 20 73		    .text "]<- EL start to cursor"
->0dff	74 61 72 74 20 74 6f 20 63 75 72 73 6f 72
->0e0d	00				    .byte 0
->0e0e	1b 5b 32 30 3b 34 30 48		    .text 27,"[20;40H"
->0e16	1b 5b 31 4b			    .text 27,"[1K"
->0e1a	00				    .byte 0
->0e1b	1b 5b 32 30 48			    .text 27,"[20H"
->0e20	2e 2e 2e 2e 2c 2e 2e 2e		    .text "....,....1....,....2....,....3....,....4....,....5....,....6....,....7....,....8"
->0e28	2e 31 2e 2e 2e 2e 2c 2e 2e 2e 2e 32 2e 2e 2e 2e
->0e38	2c 2e 2e 2e 2e 33 2e 2e 2e 2e 2c 2e 2e 2e 2e 34
->0e48	2e 2e 2e 2e 2c 2e 2e 2e 2e 35 2e 2e 2e 2e 2c 2e
->0e58	2e 2e 2e 36 2e 2e 2e 2e 2c 2e 2e 2e 2e 37 2e 2e
->0e68	2e 2e 2c 2e 2e 2e 2e 38
->0e70	1b 5b 32 30 3b 31 38 48		    .text 27,"[20;18H"
->0e78	5b 45 4c 20 65 6e 74 69		    .text "[EL entire line. This text should disappear]"
->0e80	72 65 20 6c 69 6e 65 2e 20 54 68 69 73 20 74 65
->0e90	78 74 20 73 68 6f 75 6c 64 20 64 69 73 61 70 70
->0ea0	65 61 72 5d
->0ea4	00				    .byte 0
->0ea5	1b 5b 32 30 3b 31 30 48		    .text 27,"[20;10H"
->0ead	1b 5b 32 4b			    .text 27,"[2K"
->0eb1	00				    .byte 0
->0eb2	01				    .byte 1
->0eb3	1b 5b 32 39 3b 32 37 48		    .text 27,"[29;27HPress a key to restart test"
->0ebb	50 72 65 73 73 20 61 20 6b 65 79 20 74 6f 20 72
->0ecb	65 73 74 61 72 74 20 74 65 73 74
->0ed6	00				    .byte 0
->0ed7	00 00 00 00			    .byte 0,0,0,0
+>0d72	24 30 39 20 48 54 3a 20		    .text "$09 HT: Horizontal tab",$0d,$0a
+>0d7a	48 6f 72 69 7a 6f 6e 74 61 6c 20 74 61 62 0d 0a
+>0d8a	20 20 20 20 20 20 20 20		    .text "         |         |         |         |",$0d,$0a
+>0d92	20 7c 20 20 20 20 20 20 20 20 20 7c 20 20 20 20
+>0da2	20 20 20 20 20 7c 20 20 20 20 20 20 20 20 20 7c
+>0db2	0d 0a
+>0db4	62 61 72 73 09 7c 73 68		    .text "bars",9,"|should",9,"|line",9,"|up",9,"|",$0d,$0a
+>0dbc	6f 75 6c 64 09 7c 6c 69 6e 65 09 7c 75 70 09 7c
+>0dcc	0d 0a
+>0dce	0a 0a				    .byte $0a,$0a
+>0dd0	00				    .byte 0
+>0dd1	01				    .byte 1
+>0dd2	1b 5b 48 c5 20 48 4f 4d		    .text 27,"[H",$c5," HOME POSITION",$0D,$0A
+>0dda	45 20 50 4f 53 49 54 49 4f 4e 0d 0a
+>0de6	00 01				    .byte 0,1
+>0de8	1b 5b 32 30 3b 34 30 48		    .text 27,"[20;40H",$c5," Row 20 Col 40",$0d,$0a
+>0df0	c5 20 52 6f 77 20 32 30 20 43 6f 6c 20 34 30 0d
+>0e00	0a
+>0e01	00 01				    .byte 0,1
+>0e03	1b 5b 36 30 3b 38 30 48		    .text 27,"[60;80H",$c5
+>0e0b	c5
+>0e0c	1b 5b 36 30 3b 36 35 48		    .text 27,"[60;65HRow 60 Col 80"
+>0e14	52 6f 77 20 36 30 20 43 6f 6c 20 38 30
+>0e21	00 01				    .byte 0,1
+>0e23	1b 5b 34 3b 35 48 c5 20		    .text 27,"[4;5H",$c5," Row 4 Col 5",$0d,$0a
+>0e2b	52 6f 77 20 34 20 43 6f 6c 20 35 0d 0a
+>0e38	00 01				    .byte 0,1
+>0e3a	1b 5b 31 30 48 2b 20 4c		    .text 27,"[10H+ Line 10, column 1 (no column)"
+>0e42	69 6e 65 20 31 30 2c 20 63 6f 6c 75 6d 6e 20 31
+>0e52	20 28 6e 6f 20 63 6f 6c 75 6d 6e 29
+>0e5e	00 01				    .byte 0,1
+>0e60	1b 5b 3b 34 30 48 2b 20		    .text 27,"[;40H+ Col 40 (no row)  "
+>0e68	43 6f 6c 20 34 30 20 28 6e 6f 20 72 6f 77 29 20
+>0e78	20
+>0e79	00				    .byte 0
+>0e7a	1b 5b 32 4a 1b 5b 48		    .text 27,"[2J",27,"[H"
+>0e81	1b 5b 32 3b 36 35 48 4e		    .text 27,"[2;65HNo-wrap test. -[Not visible]>"
+>0e89	6f 2d 77 72 61 70 20 74 65 73 74 2e 20 2d 5b 4e
+>0e99	6f 74 20 76 69 73 69 62 6c 65 5d 3e
+>0ea5	1b 5b 33 48 4e 6f 2d 57		    .text 27,"[3HNo-Wrap test: > char should be on",$0d,$0A
+>0ead	72 61 70 20 74 65 73 74 3a 20 3e 20 63 68 61 72
+>0ebd	20 73 68 6f 75 6c 64 20 62 65 20 6f 6e 0d 0a
+>0ecc	72 69 67 68 74 20 65 64		    .text "right edge and [Not visible] should not",$0d,$0a
+>0ed4	67 65 20 61 6e 64 20 5b 4e 6f 74 20 76 69 73 69
+>0ee4	62 6c 65 5d 20 73 68 6f 75 6c 64 20 6e 6f 74 0d
+>0ef4	0a
+>0ef5	62 65 20 76 69 73 69 62		    .text "be visible.",$0d,$0a
+>0efd	6c 65 2e 0d 0a
+>0f02	00				    .byte 0
+>0f03	1b 5b 32 4a			    .text 27,"[2J"
+>0f07	1b 5b 48			    .text 27,"[H"
+>0f0a	1b 42 61 64 20 65 73 63		    .text 27,"Bad escape code tests:",$0d,$0a
+>0f12	61 70 65 20 63 6f 64 65 20 74 65 73 74 73 3a 0d
+>0f22	0a
+>0f23	1b 48 20 6d 69 73 73 69		    .text 27,"H missing [ in escape code",$0d,$0a
+>0f2b	6e 67 20 5b 20 69 6e 20 65 73 63 61 70 65 20 63
+>0f3b	6f 64 65 0d 0a
+>0f40	1b 5b 5a 20 69 6e 76 61		    .text 27,"[Z invalid command in escape code",$0d,$0a
+>0f48	6c 69 64 20 63 6f 6d 6d 61 6e 64 20 69 6e 20 65
+>0f58	73 63 61 70 65 20 63 6f 64 65 0d 0a
+>0f64	00				    .byte 0
+>0f65	01				    .byte 1
+>0f66	1b 5b 32 30 3b 32 30 48		    .text 27,"[20;20H"
+>0f6e	45 44 20 20 63 75 72 73		    .text "ED  cursor to end ->"
+>0f76	6f 72 20 74 6f 20 65 6e 64 20 2d 3e
+>0f82	1b 5b 32 30 3b 34 30 48		    .text 27,"[20;40H"
+>0f8a	5b 54 68 69 73 20 74 65		    .text "[This text should disappear]"
+>0f92	78 74 20 73 68 6f 75 6c 64 20 64 69 73 61 70 70
+>0fa2	65 61 72 5d
+>0fa6	00				    .byte 0
+>0fa7	1b 5b 32 30 3b 34 30 48		    .text 27,"[20;40H"
+>0faf	1b 5b 30 4a			    .text 27,"[0J"
+>0fb3	00				    .byte 0
+>0fb4	01				    .byte 1
+>0fb5	1b 5b 32 30 3b 31 37 48		    .text 27,"[20;17H"
+>0fbd	5b 54 68 69 73 20 73 68		    .text "[This should disappear]"
+>0fc5	6f 75 6c 64 20 64 69 73 61 70 70 65 61 72 5d
+>0fd4	1b 5b 32 30 3b 34 30 48		    .text 27,"[20;40H"
+>0fdc	3c 2d 20 45 44 20 73 74		    .text "<- ED start to cursor",$0D,$0A
+>0fe4	61 72 74 20 74 6f 20 63 75 72 73 6f 72 0d 0a
+>0ff3	1b 5b 36 30 3b 35 34 48		    .text 27,"[60;54H"
+>0ffb	54 68 69 73 20 73 68 6f		    .text "This should remain visible."
+>1003	75 6c 64 20 72 65 6d 61 69 6e 20 76 69 73 69 62
+>1013	6c 65 2e
+>1016	00				    .byte 0
+>1017	1b 5b 32 30 3b 33 39 48		    .text 27,"[20;39H"
+>101f	1b 5b 31 4a			    .text 27,"[1J"
+>1023	00				    .byte 0
+>1024	1b 5b 32 4a			    .text 27,"[2J"
+>1028	1b 5b 31 30 3b 32 37 48		    .text 27,"[10;27H   Erase full screen"
+>1030	20 20 20 45 72 61 73 65 20 66 75 6c 6c 20 73 63
+>1040	72 65 65 6e
+>1044	1b 5b 31 31 3b 32 37 48		    .text 27,"[11;27H Screen should be clear"
+>104c	20 53 63 72 65 65 6e 20 73 68 6f 75 6c 64 20 62
+>105c	65 20 63 6c 65 61 72
+>1063	1b 5b 31 32 3b 32 37 48		    .text 27,"[12;27H[Aside from this message]"
+>106b	5b 41 73 69 64 65 20 66 72 6f 6d 20 74 68 69 73
+>107b	20 6d 65 73 73 61 67 65 5d
+>1084	00				    .byte 0
+>1085	01				    .byte 1
+>1086	1b 5b 32 30 3b 31 30 48		    .text 27,"[20;10H"
+>108e	45 4c 20 63 75 72 73 6f		    .text "EL cursor to to end of line ->"
+>1096	72 20 74 6f 20 74 6f 20 65 6e 64 20 6f 66 20 6c
+>10a6	69 6e 65 20 2d 3e
+>10ac	1b 5b 32 30 3b 34 30 48		    .text 27,"[20;40H"
+>10b4	5b 54 68 69 73 20 74 65		    .text "[This text should disappear]"
+>10bc	78 74 20 73 68 6f 75 6c 64 20 64 69 73 61 70 70
+>10cc	65 61 72 5d
+>10d0	00				    .byte 0
+>10d1	1b 5b 32 30 3b 34 30 48		    .text 27,"[20;40H"
+>10d9	1b 5b 30 4b			    .text 27,"[0K"
+>10dd	00				    .byte 0
+>10de	1b 5b 32 30 3b 31 30 48		    .text 27,"[20;10H"
+>10e6	5b 54 68 69 73 20 74 65		    .text "[This text should disappear]"
+>10ee	78 74 20 73 68 6f 75 6c 64 20 64 69 73 61 70 70
+>10fe	65 61 72 5d
+>1102	1b 5b 32 30 3b 34 30 48		    .text 27,"[20;40H"
+>110a	5d 3c 2d 20 45 4c 20 73		    .text "]<- EL start to cursor"
+>1112	74 61 72 74 20 74 6f 20 63 75 72 73 6f 72
+>1120	00				    .byte 0
+>1121	1b 5b 32 30 3b 34 30 48		    .text 27,"[20;40H"
+>1129	1b 5b 31 4b			    .text 27,"[1K"
+>112d	00				    .byte 0
+>112e	1b 5b 32 30 48			    .text 27,"[20H"
+>1133	2e 2e 2e 2e 2c 2e 2e 2e		    .text "....,....1....,....2....,....3....,....4....,....5....,....6....,....7....,....8"
+>113b	2e 31 2e 2e 2e 2e 2c 2e 2e 2e 2e 32 2e 2e 2e 2e
+>114b	2c 2e 2e 2e 2e 33 2e 2e 2e 2e 2c 2e 2e 2e 2e 34
+>115b	2e 2e 2e 2e 2c 2e 2e 2e 2e 35 2e 2e 2e 2e 2c 2e
+>116b	2e 2e 2e 36 2e 2e 2e 2e 2c 2e 2e 2e 2e 37 2e 2e
+>117b	2e 2e 2c 2e 2e 2e 2e 38
+>1183	1b 5b 32 30 3b 31 38 48		    .text 27,"[20;18H"
+>118b	5b 45 4c 20 65 6e 74 69		    .text "[EL entire line. This text should disappear]"
+>1193	72 65 20 6c 69 6e 65 2e 20 54 68 69 73 20 74 65
+>11a3	78 74 20 73 68 6f 75 6c 64 20 64 69 73 61 70 70
+>11b3	65 61 72 5d
+>11b7	00				    .byte 0
+>11b8	1b 5b 32 30 3b 31 30 48		    .text 27,"[20;10H"
+>11c0	1b 5b 32 4b			    .text 27,"[2K"
+>11c4	00				    .byte 0
+>11c5	01				    .byte 1
+>11c6	1b 5b 32 39 3b 32 37 48		    .text 27,"[29;27HPress a key to restart test"
+>11ce	50 72 65 73 73 20 61 20 6b 65 79 20 74 6f 20 72
+>11de	65 73 74 61 72 74 20 74 65 73 74
+>11e9	00				    .byte 0
+>11ea	1a 00 00 00 00			    .byte 26,0,0,0,0
 
 ;******  Processing file: ANSI_DRIVER.ASM
 
@@ -272,12 +365,14 @@
 =$9f24					vera_data1 = $9f24    ; VERA data port 1
 =$9f25					vera_dcsel = $9f25    ; VERA data select register
 =$ff6e					jsrfar = $FF6E
-=$00					bank_ram = $00
-=$01					bank_rom = $01
-=$0a					audio_bank = $0A
+=$00					bank_select_ram = $00
+=$01					bank_select_rom = $01
+=$0a					bank_audio = $0A
 =$c063					ym_init = $C063
 =$c003					bas_fmnote = $C003
 =$c000					bas_fmfreq = $c000
+=$c00f					bas_psgfreq = $c00f
+=$c069					ym_loadpatch = $c069
 =$02					R0      = $02
 =$02					R0L     = $02
 =$03					R0H     = $03
@@ -288,350 +383,354 @@
 =$04					R2L     = $04
 =$05					R2H     = $05
 =$02					ansi_strptr   = R0  ; string pointer for prints procedure
-.0edb					ansi_init:
-.0edb	a9 0f		lda #$0f	    lda #15     ; ISO mode PETSCII character
-.0edd	20 d2 ff	jsr $ffd2	    jsr $FFD2   ; print it
-.0ee0	a9 07		lda #$07	    lda #7
-.0ee2	20 62 ff	jsr $ff62	    jsr $ff62 ; screen_set_charset
-.0ee5	20 6e ff	jsr $ff6e	    jsr jsrfar  ; $FF6E
->0ee8	63 c0				    .word ym_init ; $C063
->0eea	0a				    .byte audio_bank
-.0eeb	60		rts		    rts
-.0eec					locate:
-.0eec	48		pha		    pha
-.0eed	20 37 11	jsr $1137	    jsr csr_blink_off
-.0ef0	8e 70 11	stx $1170	    stx csr_col
-.0ef3	8c 71 11	sty $1171	    sty csr_row
-.0ef6	20 fb 0e	jsr $0efb	    jsr load_addr_vector
-.0ef9	68		pla		    pla
-.0efa	60		rts		    rts
-.0efb					load_addr_vector:
-.0efb	9c 25 9f	stz $9f25	    stz vera_dcsel        ; work with data port 0
-.0efe	ad 70 11	lda $1170	    lda csr_col
-.0f01	0a		asl a		    asl A
-.0f02	8d 20 9f	sta $9f20	    sta vera_addr0
-.0f05	ad 71 11	lda $1171	    lda csr_row
-.0f08	18		clc		    clc
-.0f09	6d 73 11	adc $1173	    adc csr_base
-.0f0c	8d 21 9f	sta $9f21	    sta vera_addr1
-.0f0f	ad 72 11	lda $1172	    lda csr_bank
-.0f12	8d 22 9f	sta $9f22	    sta vera_addr2
-.0f15	60		rts		    rts
-.0f16					save_addr_vector:
-.0f16	9c 25 9f	stz $9f25	    stz vera_dcsel        ; work with data port 0
-.0f19	ad 20 9f	lda $9f20	    lda vera_addr0
-.0f1c	4a		lsr a		    lsr A
-.0f1d	8d 70 11	sta $1170	    sta csr_col
-.0f20	ad 21 9f	lda $9f21	    lda vera_addr1
-.0f23	38		sec		    sec
-.0f24	ed 73 11	sbc $1173	    sbc csr_base
-.0f27	8d 71 11	sta $1171	    sta csr_row
-.0f2a	60		rts		    rts
-.0f2b					ansi_print_str:
-.0f2b	20 fb 0e	jsr $0efb	    jsr load_addr_vector
-.0f2e					prints_loop:
-.0f2e	b2 02		lda ($02)	    lda (ansi_strptr)
-.0f30	f0 0b		beq $0f3d	    beq prints_done
-.0f32	20 44 0f	jsr $0f44	    jsr chrout
-.0f35	e6 02		inc $02		        inc ansi_strptr
-.0f37	d0 02		bne $0f3b	        bne +
-.0f39	e6 03		inc $03		        inc ansi_strptr+1
-.0f3b					    +
-.0f3b	80 f1		bra $0f2e	    bra prints_loop
-.0f3d					prints_done:
-.0f3d	e6 02		inc $02		        inc ansi_strptr
-.0f3f	d0 02		bne $0f43	        bne +
-.0f41	e6 03		inc $03		        inc ansi_strptr+1
-.0f43					    +
-.0f43	60		rts		    rts
-.0f44					chrout:
-.0f44	ac 7a 11	ldy $117a	    ldy param_count
-.0f47	c0 04		cpy #$04	    cpy #cmd_max
-.0f49	c0 01		cpy #$01	    cpy #1
-.0f4b	f0 41		beq $0f8e	    beq chrout_read_param
-.0f4d	b0 4f		bcs $0f9e	    bcs chrout_test_semi
-.0f4f	c9 20		cmp #$20	    cmp #' '
-.0f51	90 03		bcc $0f56	    bcc do_control_char
-.0f53	4c 3d 11	jmp $113d	    jmp just_print
-.0f56					do_control_char:
-.0f56	c9 1b		cmp #$1b	    cmp #$1B ; ESC
-.0f58	d0 06		bne $0f60	    bne +
-.0f5a	ee 7a 11	inc $117a	    inc param_count
-.0f5d	4c 6f 11	jmp $116f	    jmp chrout_done
-.0f60	c9 0a		cmp #$0a	+   cmp #$0A ; Line Feed
-.0f62	d0 09		bne $0f6d	    bne +
-.0f64	ee 71 11	inc $1171	    inc csr_row
-.0f67	20 fb 0e	jsr $0efb	    jsr load_addr_vector
-.0f6a	4c 49 11	jmp $1149	    jmp check_bounds
-.0f6d	c9 0d		cmp #$0d	+   cmp #$0D ;CR
-.0f6f	d0 09		bne $0f7a	    bne +
-.0f71	9c 70 11	stz $1170	    stz csr_col
-.0f74	20 fb 0e	jsr $0efb	    jsr load_addr_vector
-.0f77	4c 49 11	jmp $1149	    jmp check_bounds
-.0f7a	c9 07		cmp #$07	+   cmp #$07 ; bell
-.0f7c	d0 03		bne $0f81	    bne +
-.0f7e	4c 00 11	jmp $1100	    jmp do_bell
-.0f81	c9 07		cmp #$07	+   cmp #$07 ; bell
-.0f83	d0 06		bne $0f8b	    bne +
-.0f85	4c 18 11	jmp $1118	    jmp do_BS
-.0f88	4c 00 11	jmp $1100	    jmp do_bell
-.0f8b	4c 3d 11	jmp $113d	+   jmp just_print
-.0f8e					chrout_read_param:
-.0f8e	c9 5b		cmp #$5b	    cmp #'['
-.0f90	d0 06		bne $0f98	    bne +
-.0f92	ee 7a 11	inc $117a	    inc param_count
-.0f95	4c 6f 11	jmp $116f	    jmp chrout_done
-.0f98					+
-.0f98	9c 7a 11	stz $117a	    stz param_count
-.0f9b	4c 3d 11	jmp $113d	    jmp just_print
-.0f9e					chrout_test_semi:
-.0f9e	c9 3b		cmp #$3b	    cmp #';'
-.0fa0	d0 08		bne $0faa	    bne chrout_test_number
-.0fa2	a9 03		lda #$03	    lda #$03
-.0fa4	8d 7a 11	sta $117a	    sta param_count
-.0fa7	4c 6f 11	jmp $116f	    jmp chrout_done
-.0faa					chrout_test_number:
-.0faa	c9 30		cmp #$30	    cmp #'0'
-.0fac	90 24		bcc $0fd2	    bcc chrout_not_number
-.0fae	c9 3a		cmp #$3a	    cmp #'9'+1
-.0fb0	b0 20		bcs $0fd2	    bcs chrout_not_number
-.0fb2	38		sec		    sec
-.0fb3	e9 30		sbc #$30	    sbc #'0'
-.0fb5	8d 7e 11	sta $117e	    sta digit_1
-.0fb8	b9 7a 11	lda $117a,y	    lda param_count,Y
-.0fbb	0a		asl a		    asl
-.0fbc	0a		asl a		    asl
-.0fbd	0a		asl a		    asl
-.0fbe	8d 83 11	sta $1183	    sta mult_1
-.0fc1	b9 7a 11	lda $117a,y	    lda param_count,Y
-.0fc4	0a		asl a		    asl
-.0fc5	18		clc		    clc
-.0fc6	6d 83 11	adc $1183	    adc mult_1
-.0fc9	6d 7e 11	adc $117e	    adc digit_1
-.0fcc	99 7a 11	sta $117a,y	    sta param_count,Y
-.0fcf	4c 6f 11	jmp $116f	    jmp chrout_done
-.0fd2					chrout_not_number:
-.0fd2	4c d5 0f	jmp $0fd5	    jmp do_CSI
-.0fd5					do_CSI:
-.0fd5	c9 48		cmp #$48	    cmp #'H'
-.0fd7	f0 0f		beq $0fe8	    beq do_CUP
-.0fd9	c9 66		cmp #$66	    cmp #'f'
-.0fdb	f0 0b		beq $0fe8	    beq do_CUP
-.0fdd	c9 4a		cmp #$4a	    cmp #'J'
-.0fdf	f0 72		beq $1053	    beq do_ED
-.0fe1	c9 4b		cmp #$4b	    cmp #'K'
-.0fe3	f0 15		beq $0ffa	    beq do_EL
-.0fe5	4c 28 11	jmp $1128	    jmp cmd_done
-.0fe8					do_CUP:
-.0fe8	ae 7d 11	ldx $117d	    ldx param_2
-.0feb	f0 01		beq $0fee	    beq +
-.0fed	ca		dex		    dex
-.0fee	ac 7c 11	ldy $117c	+   ldy param_1
-.0ff1	f0 01		beq $0ff4	    beq +
-.0ff3	88		dey		    dey
-.0ff4	20 ec 0e	jsr $0eec	+   jsr locate
-.0ff7	4c 28 11	jmp $1128	    jmp cmd_done
-.0ffa					do_EL:
-.0ffa	ad 7c 11	lda $117c	    lda param_1
-.0ffd	d0 1c		bne $101b	    bne +
-.0fff	ad 70 11	lda $1170	    lda csr_col
-.1002	8d 7f 11	sta $117f	    sta start_col
-.1005	ad 71 11	lda $1171	    lda csr_row
-.1008	8d 80 11	sta $1180	    sta start_row
-.100b	ad 76 11	lda $1176	    lda col_count
-.100e	3a		dec a		    dec a
-.100f	8d 81 11	sta $1181	    sta end_col
-.1012	ad 71 11	lda $1171	    lda csr_row
-.1015	8d 82 11	sta $1182	    sta end_row
-.1018	4c ab 10	jmp $10ab	    jmp do_erase
-.101b	c9 01		cmp #$01	+   cmp #1
-.101d	d0 18		bne $1037	    bne +
-.101f	9c 7f 11	stz $117f	    stz start_col
-.1022	ad 71 11	lda $1171	    lda csr_row
-.1025	8d 80 11	sta $1180	    sta start_row
-.1028	ad 70 11	lda $1170	    lda csr_col
-.102b	8d 81 11	sta $1181	    sta end_col
-.102e	ad 71 11	lda $1171	    lda csr_row
-.1031	8d 82 11	sta $1182	    sta end_row
-.1034	4c ab 10	jmp $10ab	    jmp do_erase
-.1037	c9 02		cmp #$02	+   cmp #2
-.1039	d0 39		bne $1074	    bne +
-.103b	9c 7f 11	stz $117f	    stz start_col
-.103e	ad 71 11	lda $1171	    lda csr_row
-.1041	8d 80 11	sta $1180	    sta start_row
-.1044	ad 76 11	lda $1176	    lda col_count
-.1047	8d 81 11	sta $1181	    sta end_col
-.104a	ad 71 11	lda $1171	    lda csr_row
-.104d	8d 82 11	sta $1182	    sta end_row
-.1050	4c ab 10	jmp $10ab	    jmp do_erase
-.1053					do_ED:
-.1053	ad 7c 11	lda $117c	    lda param_1
-.1056	d0 1c		bne $1074	    bne +
-.1058	ad 70 11	lda $1170	    lda csr_col
-.105b	8d 7f 11	sta $117f	    sta start_col
-.105e	ad 71 11	lda $1171	    lda csr_row
-.1061	8d 80 11	sta $1180	    sta start_row
-.1064	ad 76 11	lda $1176	    lda col_count
-.1067	8d 81 11	sta $1181	    sta end_col
-.106a	ad 77 11	lda $1177	    lda row_count
-.106d	3a		dec a		    dec a
-.106e	8d 82 11	sta $1182	    sta end_row
-.1071	4c ab 10	jmp $10ab	    jmp do_erase
-.1074	c9 01		cmp #$01	+   cmp #1
-.1076	d0 15		bne $108d	    bne +
-.1078	9c 7f 11	stz $117f	    stz start_col
-.107b	9c 80 11	stz $1180	    stz start_row
-.107e	ad 70 11	lda $1170	    lda csr_col
-.1081	8d 81 11	sta $1181	    sta end_col
-.1084	ad 71 11	lda $1171	    lda csr_row
-.1087	8d 82 11	sta $1182	    sta end_row
-.108a	4c ab 10	jmp $10ab	    jmp do_erase
-.108d	c9 02		cmp #$02	+   cmp #2
-.108f	d0 17		bne $10a8	    bne +
-.1091					ansi_cls:
-.1091	9c 7f 11	stz $117f	    stz start_col
-.1094	9c 80 11	stz $1180	    stz start_row
-.1097	ad 76 11	lda $1176	    lda col_count
-.109a	3a		dec a		    dec a
-.109b	8d 81 11	sta $1181	    sta end_col
-.109e	ad 77 11	lda $1177	    lda row_count
-.10a1	3a		dec a		    dec a
-.10a2	8d 82 11	sta $1182	    sta end_row
-.10a5	4c ab 10	jmp $10ab	    jmp do_erase
-.10a8	4c 28 11	jmp $1128	+   jmp cmd_done
-.10ab					do_erase:
-.10ab	ae 75 11	ldx $1175	    ldx cur_char
-.10ae	ac 74 11	ldy $1174	    ldy cur_color
-.10b1					erase_first_line:
-.10b1	9c 25 9f	stz $9f25	    stz vera_dcsel
-.10b4	ad 7f 11	lda $117f	    lda start_col
-.10b7	0a		asl a		    asl
-.10b8	8d 20 9f	sta $9f20	    sta vera_addr0
-.10bb	ad 80 11	lda $1180	    lda work_row
-.10be	18		clc		    clc
-.10bf	6d 73 11	adc $1173	    adc csr_base
-.10c2	8d 21 9f	sta $9f21	    sta vera_addr1
-.10c5	ad 72 11	lda $1172	    lda csr_bank
-.10c8	8d 22 9f	sta $9f22	    sta vera_addr2
-.10cb	ad 81 11	lda $1181	    lda end_col     ; number of rows to clear
-.10ce	38		sec		    sec
-.10cf	ed 7f 11	sbc $117f	    sbc start_col
-.10d2	1a		inc a		    inc a
-.10d3					erase_fill_line:
-.10d3	8e 23 9f	stx $9f23	    stx vera_data0
-.10d6	8c 23 9f	sty $9f23	    sty vera_data0
-.10d9	3a		dec a		    dec a
-.10da	d0 f7		bne $10d3	    bne erase_fill_line
-.10dc	20 24 11	jsr $1124	    jsr do_callback  ; give serial driver the chance to empty the FIFO
-.10df	9c 20 9f	stz $9f20	    stz vera_addr0
-.10e2	ee 21 9f	inc $9f21	    inc vera_addr1
-.10e5	ee 80 11	inc $1180	    inc work_row
-.10e8	ad 80 11	lda $1180	    lda work_row
-.10eb	cd 82 11	cmp $1182	    cmp end_row
-.10ee	f0 07		beq $10f7	    beq erase_last_line
-.10f0	b0 0b		bcs $10fd	    bcs erase_done
-.10f2	ad 76 11	lda $1176	    lda col_count ; number of columns to delete
-.10f5	80 dc		bra $10d3	    bra erase_fill_line
-.10f7					erase_last_line:
-.10f7	ad 81 11	lda $1181	    lda end_col ; for Erase Line, only erase up to cursor
-.10fa	1a		inc a		    inc a
-.10fb	80 d6		bra $10d3	    bra erase_fill_line
-.10fd					erase_done:
-.10fd	4c 28 11	jmp $1128	    jmp cmd_done
-.1100					do_bell:
-.1100	a5 01		lda $01		    lda bank_rom
-.1102	8d 78 11	sta $1178	    sta bank_rom_save
-.1105	a5 0a		lda $0a		    lda audio_bank
-.1107	85 01		sta $01		    sta bank_rom
-.1109	a9 00		lda #$00	    lda #$00 ; channel 0
-.110b	a2 02		ldx #$02	    ldx #$02 ; 512 Hz
-.110d	a0 00		ldy #$00	    ldy #$00 ;
-.110f	18		clc		    clc
-.1110	20 00 c0	jsr $c000	    jsr bas_fmfreq
-.1113	ad 78 11	lda $1178	    lda bank_rom_save
-.1116	85 01		sta $01		    sta bank_rom
-.1118					do_bs:
-.1118	ad 70 11	lda $1170	    lda csr_col
-.111b	f0 04		beq $1121	    beq +
-.111d	3a		dec a		    dec A
-.111e	8d 70 11	sta $1170	    sta csr_col
-.1121	4c 28 11	jmp $1128	+   jmp cmd_done
-.1124					do_callback:
-.1124	6c 88 11	jmp ($1188)	    jmp (callback_addr)
-.1127					empty_callback:
-.1127	60		rts		    RTS
-.1128					cmd_done:
-.1128	9c 7a 11	stz $117a	    stz param_count
-.112b	9c 7b 11	stz $117b	    stz param_0
-.112e	9c 7c 11	stz $117c	    stz param_1
-.1131	9c 7d 11	stz $117d	    stz param_2
-.1134	4c 6f 11	jmp $116f	    jmp chrout_done
-.1137					csr_blink_off:
-.1137	60		rts		    rts
-.1138					csr_blink_on:
-.1138	60		rts		    rts
-.1139					csr_blink:
-.1139	60		rts		    rts
-.113a					csr_blink_reset:
-.113a	60		rts		    rts
-.113b					csr_blink_wait:
-.113b	60		rts		    rts
-.113c					csr_hide:
-.113c	60		rts		    rts
-.113d					csr_show:
-.113d					just_print:
-.113d	8d 23 9f	sta $9f23	    sta vera_data0
-.1140	ad 74 11	lda $1174	    lda cur_color   ; get the current color
-.1143	8d 23 9f	sta $9f23	    sta vera_data0
-.1146	ee 70 11	inc $1170	    inc csr_col     ; moves cursor to the right one position
-.1149					check_bounds:
-.1149	ad 70 11	lda $1170	    lda csr_col
-.114c	cd 76 11	cmp $1176	    cmp col_count
-.114f	90 0a		bcc $115b	    bcc check_row
-.1151	ad 76 11	lda $1176	    lda col_count
-.1154	3a		dec a		    dec A
-.1155	8d 70 11	sta $1170	    sta csr_col
-.1158	20 fb 0e	jsr $0efb	    jsr load_addr_vector
-.115b					check_row:
-.115b	ad 71 11	lda $1171	    lda csr_row
-.115e	cd 77 11	cmp $1177	    cmp row_count
-.1161	90 0c		bcc $116f	    bcc check_done
-.1163	ad 71 11	lda $1171	    lda csr_row
-.1166	38		sec		    sec
-.1167	e9 01		sbc #$01	    sbc #$01
-.1169	8d 71 11	sta $1171	    sta csr_row
-.116c	20 fb 0e	jsr $0efb	    jsr load_addr_vector
-.116f					check_done:
-.116f					chrout_done:
-.116f	60		rts		    rts
->1170	00				csr_col:       .byte $00  ; column number (addr bits 0-7)
->1171	00				csr_row:       .byte $00  ; row number (addr bits 8-15)
->1172	11				csr_bank:       .byte $11 ; auto-increment and addr bit 16.
->1173	b0				csr_base:      .byte $b0  ; base address of screen buffer
->1174	01				cur_color:      .byte $01 ; currrent color attribute
->1175	20				cur_char:       .byte ' ' ; fill character for clear screen
->1176	50				col_count:    .byte 80 ; default screen width
->1177	3c				row_count:    .byte 60 ; default screen height
->1178	00				bank_rom_save:  .byte 0 ; perserve the current ROM bank
->1179	00				bank_ram_save:  .byte 0 ; preserve the current RAM bank
+.11ef					ansi_init:
+.11ef	a9 0f		lda #$0f	    lda #15     ; ISO mode PETSCII character
+.11f1	20 d2 ff	jsr $ffd2	    jsr $FFD2   ; print it
+.11f4	a9 07		lda #$07	    lda #7
+.11f6	20 62 ff	jsr $ff62	    jsr $ff62 ; screen_set_charset
+.11f9	20 6e ff	jsr $ff6e	    jsr jsrfar  ; $FF6E
+>11fc	63 c0				    .word ym_init ; $C063
+>11fe	0a				    .byte bank_audio
+.11ff	a2 0d		ldx #$0d	    ldx #$0d
+.1201	38		sec		    sec
+.1202	20 6e ff	jsr $ff6e	    jsr jsrfar
+>1205	69 c0				    .word ym_loadpatch
+>1207	0a				    .byte bank_audio
+.1208	60		rts		    rts
+.1209					locate:
+.1209	48		pha		    pha
+.120a	20 50 14	jsr $1450	    jsr csr_blink_off
+.120d	8e 89 14	stx $1489	    stx csr_col
+.1210	8c 8a 14	sty $148a	    sty csr_row
+.1213	20 18 12	jsr $1218	    jsr load_addr_vector
+.1216	68		pla		    pla
+.1217	60		rts		    rts
+.1218					load_addr_vector:
+.1218	9c 25 9f	stz $9f25	    stz vera_dcsel        ; work with data port 0
+.121b	ad 89 14	lda $1489	    lda csr_col
+.121e	0a		asl a		    asl A
+.121f	8d 20 9f	sta $9f20	    sta vera_addr0
+.1222	ad 8a 14	lda $148a	    lda csr_row
+.1225	18		clc		    clc
+.1226	6d 8c 14	adc $148c	    adc csr_base
+.1229	8d 21 9f	sta $9f21	    sta vera_addr1
+.122c	ad 8b 14	lda $148b	    lda csr_bank
+.122f	8d 22 9f	sta $9f22	    sta vera_addr2
+.1232	60		rts		    rts
+.1233					save_addr_vector:
+.1233	9c 25 9f	stz $9f25	    stz vera_dcsel        ; work with data port 0
+.1236	ad 20 9f	lda $9f20	    lda vera_addr0
+.1239	4a		lsr a		    lsr A
+.123a	8d 89 14	sta $1489	    sta csr_col
+.123d	ad 21 9f	lda $9f21	    lda vera_addr1
+.1240	38		sec		    sec
+.1241	ed 8c 14	sbc $148c	    sbc csr_base
+.1244	8d 8a 14	sta $148a	    sta csr_row
+.1247	60		rts		    rts
+.1248					ansi_print_str:
+.1248	20 18 12	jsr $1218	    jsr load_addr_vector
+.124b					prints_loop:
+.124b	b2 02		lda ($02)	    lda (ansi_strptr)
+.124d	f0 0b		beq $125a	    beq prints_done
+.124f	20 61 12	jsr $1261	    jsr chrout
+.1252	e6 02		inc $02		        inc ansi_strptr
+.1254	d0 02		bne $1258	        bne +
+.1256	e6 03		inc $03		        inc ansi_strptr+1
+.1258					    +
+.1258	80 f1		bra $124b	    bra prints_loop
+.125a					prints_done:
+.125a	e6 02		inc $02		        inc ansi_strptr
+.125c	d0 02		bne $1260	        bne +
+.125e	e6 03		inc $03		        inc ansi_strptr+1
+.1260					    +
+.1260	60		rts		    rts
+.1261					chrout:
+.1261	ac 93 14	ldy $1493	    ldy param_count
+.1264	c0 04		cpy #$04	    cpy #cmd_max
+.1266	c0 01		cpy #$01	    cpy #1
+.1268	f0 3e		beq $12a8	    beq chrout_read_param
+.126a	b0 4c		bcs $12b8	    bcs chrout_test_semi
+.126c	c9 20		cmp #$20	    cmp #' '
+.126e	90 03		bcc $1273	    bcc do_control_char
+.1270	4c 56 14	jmp $1456	    jmp just_print
+.1273					do_control_char:
+.1273	c9 1b		cmp #$1b	    cmp #$1B ; ESC
+.1275	d0 06		bne $127d	    bne +
+.1277	ee 93 14	inc $1493	    inc param_count
+.127a	4c 88 14	jmp $1488	    jmp chrout_done
+.127d	c9 0a		cmp #$0a	+   cmp #$0A ; Line Feed
+.127f	d0 09		bne $128a	    bne +
+.1281	ee 8a 14	inc $148a	    inc csr_row
+.1284	20 18 12	jsr $1218	    jsr load_addr_vector
+.1287	4c 62 14	jmp $1462	    jmp check_bounds
+.128a	c9 0d		cmp #$0d	+   cmp #$0D ;CR
+.128c	d0 09		bne $1297	    bne +
+.128e	9c 89 14	stz $1489	    stz csr_col
+.1291	20 18 12	jsr $1218	    jsr load_addr_vector
+.1294	4c 62 14	jmp $1462	    jmp check_bounds
+.1297	c9 07		cmp #$07	+   cmp #$07 ; bell
+.1299	d0 03		bne $129e	    bne +
+.129b	4c 1a 14	jmp $141a	    jmp do_bell
+.129e	c9 08		cmp #$08	+   cmp #$08 ; bell
+.12a0	d0 03		bne $12a5	    bne +
+.12a2	4c 2e 14	jmp $142e	    jmp do_BS
+.12a5	4c 56 14	jmp $1456	+   jmp just_print
+.12a8					chrout_read_param:
+.12a8	c9 5b		cmp #$5b	    cmp #'['
+.12aa	d0 06		bne $12b2	    bne +
+.12ac	ee 93 14	inc $1493	    inc param_count
+.12af	4c 88 14	jmp $1488	    jmp chrout_done
+.12b2					+
+.12b2	9c 93 14	stz $1493	    stz param_count
+.12b5	4c 56 14	jmp $1456	    jmp just_print
+.12b8					chrout_test_semi:
+.12b8	c9 3b		cmp #$3b	    cmp #';'
+.12ba	d0 08		bne $12c4	    bne chrout_test_number
+.12bc	a9 03		lda #$03	    lda #$03
+.12be	8d 93 14	sta $1493	    sta param_count
+.12c1	4c 88 14	jmp $1488	    jmp chrout_done
+.12c4					chrout_test_number:
+.12c4	c9 30		cmp #$30	    cmp #'0'
+.12c6	90 24		bcc $12ec	    bcc chrout_not_number
+.12c8	c9 3a		cmp #$3a	    cmp #'9'+1
+.12ca	b0 20		bcs $12ec	    bcs chrout_not_number
+.12cc	38		sec		    sec
+.12cd	e9 30		sbc #$30	    sbc #'0'
+.12cf	8d 97 14	sta $1497	    sta digit_1
+.12d2	b9 93 14	lda $1493,y	    lda param_count,Y
+.12d5	0a		asl a		    asl
+.12d6	0a		asl a		    asl
+.12d7	0a		asl a		    asl
+.12d8	8d 9c 14	sta $149c	    sta mult_1
+.12db	b9 93 14	lda $1493,y	    lda param_count,Y
+.12de	0a		asl a		    asl
+.12df	18		clc		    clc
+.12e0	6d 9c 14	adc $149c	    adc mult_1
+.12e3	6d 97 14	adc $1497	    adc digit_1
+.12e6	99 93 14	sta $1493,y	    sta param_count,Y
+.12e9	4c 88 14	jmp $1488	    jmp chrout_done
+.12ec					chrout_not_number:
+.12ec	4c ef 12	jmp $12ef	    jmp do_CSI
+.12ef					do_CSI:
+.12ef	c9 48		cmp #$48	    cmp #'H'
+.12f1	f0 0f		beq $1302	    beq do_CUP
+.12f3	c9 66		cmp #$66	    cmp #'f'
+.12f5	f0 0b		beq $1302	    beq do_CUP
+.12f7	c9 4a		cmp #$4a	    cmp #'J'
+.12f9	f0 72		beq $136d	    beq do_ED
+.12fb	c9 4b		cmp #$4b	    cmp #'K'
+.12fd	f0 15		beq $1314	    beq do_EL
+.12ff	4c 41 14	jmp $1441	    jmp cmd_done
+.1302					do_CUP:
+.1302	ae 96 14	ldx $1496	    ldx param_2
+.1305	f0 01		beq $1308	    beq +
+.1307	ca		dex		    dex
+.1308	ac 95 14	ldy $1495	+   ldy param_1
+.130b	f0 01		beq $130e	    beq +
+.130d	88		dey		    dey
+.130e	20 09 12	jsr $1209	+   jsr locate
+.1311	4c 41 14	jmp $1441	    jmp cmd_done
+.1314					do_EL:
+.1314	ad 95 14	lda $1495	    lda param_1
+.1317	d0 1c		bne $1335	    bne +
+.1319	ad 89 14	lda $1489	    lda csr_col
+.131c	8d 98 14	sta $1498	    sta start_col
+.131f	ad 8a 14	lda $148a	    lda csr_row
+.1322	8d 99 14	sta $1499	    sta start_row
+.1325	ad 8f 14	lda $148f	    lda col_count
+.1328	3a		dec a		    dec a
+.1329	8d 9a 14	sta $149a	    sta end_col
+.132c	ad 8a 14	lda $148a	    lda csr_row
+.132f	8d 9b 14	sta $149b	    sta end_row
+.1332	4c c5 13	jmp $13c5	    jmp do_erase
+.1335	c9 01		cmp #$01	+   cmp #1
+.1337	d0 18		bne $1351	    bne +
+.1339	9c 98 14	stz $1498	    stz start_col
+.133c	ad 8a 14	lda $148a	    lda csr_row
+.133f	8d 99 14	sta $1499	    sta start_row
+.1342	ad 89 14	lda $1489	    lda csr_col
+.1345	8d 9a 14	sta $149a	    sta end_col
+.1348	ad 8a 14	lda $148a	    lda csr_row
+.134b	8d 9b 14	sta $149b	    sta end_row
+.134e	4c c5 13	jmp $13c5	    jmp do_erase
+.1351	c9 02		cmp #$02	+   cmp #2
+.1353	d0 39		bne $138e	    bne +
+.1355	9c 98 14	stz $1498	    stz start_col
+.1358	ad 8a 14	lda $148a	    lda csr_row
+.135b	8d 99 14	sta $1499	    sta start_row
+.135e	ad 8f 14	lda $148f	    lda col_count
+.1361	8d 9a 14	sta $149a	    sta end_col
+.1364	ad 8a 14	lda $148a	    lda csr_row
+.1367	8d 9b 14	sta $149b	    sta end_row
+.136a	4c c5 13	jmp $13c5	    jmp do_erase
+.136d					do_ED:
+.136d	ad 95 14	lda $1495	    lda param_1
+.1370	d0 1c		bne $138e	    bne +
+.1372	ad 89 14	lda $1489	    lda csr_col
+.1375	8d 98 14	sta $1498	    sta start_col
+.1378	ad 8a 14	lda $148a	    lda csr_row
+.137b	8d 99 14	sta $1499	    sta start_row
+.137e	ad 8f 14	lda $148f	    lda col_count
+.1381	8d 9a 14	sta $149a	    sta end_col
+.1384	ad 90 14	lda $1490	    lda row_count
+.1387	3a		dec a		    dec a
+.1388	8d 9b 14	sta $149b	    sta end_row
+.138b	4c c5 13	jmp $13c5	    jmp do_erase
+.138e	c9 01		cmp #$01	+   cmp #1
+.1390	d0 15		bne $13a7	    bne +
+.1392	9c 98 14	stz $1498	    stz start_col
+.1395	9c 99 14	stz $1499	    stz start_row
+.1398	ad 89 14	lda $1489	    lda csr_col
+.139b	8d 9a 14	sta $149a	    sta end_col
+.139e	ad 8a 14	lda $148a	    lda csr_row
+.13a1	8d 9b 14	sta $149b	    sta end_row
+.13a4	4c c5 13	jmp $13c5	    jmp do_erase
+.13a7	c9 02		cmp #$02	+   cmp #2
+.13a9	d0 17		bne $13c2	    bne +
+.13ab					ansi_cls:
+.13ab	9c 98 14	stz $1498	    stz start_col
+.13ae	9c 99 14	stz $1499	    stz start_row
+.13b1	ad 8f 14	lda $148f	    lda col_count
+.13b4	3a		dec a		    dec a
+.13b5	8d 9a 14	sta $149a	    sta end_col
+.13b8	ad 90 14	lda $1490	    lda row_count
+.13bb	3a		dec a		    dec a
+.13bc	8d 9b 14	sta $149b	    sta end_row
+.13bf	4c c5 13	jmp $13c5	    jmp do_erase
+.13c2	4c 41 14	jmp $1441	+   jmp cmd_done
+.13c5					do_erase:
+.13c5	ae 8e 14	ldx $148e	    ldx cur_char
+.13c8	ac 8d 14	ldy $148d	    ldy cur_color
+.13cb					erase_first_line:
+.13cb	9c 25 9f	stz $9f25	    stz vera_dcsel
+.13ce	ad 98 14	lda $1498	    lda start_col
+.13d1	0a		asl a		    asl
+.13d2	8d 20 9f	sta $9f20	    sta vera_addr0
+.13d5	ad 99 14	lda $1499	    lda work_row
+.13d8	18		clc		    clc
+.13d9	6d 8c 14	adc $148c	    adc csr_base
+.13dc	8d 21 9f	sta $9f21	    sta vera_addr1
+.13df	ad 8b 14	lda $148b	    lda csr_bank
+.13e2	8d 22 9f	sta $9f22	    sta vera_addr2
+.13e5	ad 9a 14	lda $149a	    lda end_col     ; number of rows to clear
+.13e8	38		sec		    sec
+.13e9	ed 98 14	sbc $1498	    sbc start_col
+.13ec	1a		inc a		    inc a
+.13ed					erase_fill_line:
+.13ed	8e 23 9f	stx $9f23	    stx vera_data0
+.13f0	8c 23 9f	sty $9f23	    sty vera_data0
+.13f3	3a		dec a		    dec a
+.13f4	d0 f7		bne $13ed	    bne erase_fill_line
+.13f6	20 3d 14	jsr $143d	    jsr do_callback  ; give serial driver the chance to empty the FIFO
+.13f9	9c 20 9f	stz $9f20	    stz vera_addr0
+.13fc	ee 21 9f	inc $9f21	    inc vera_addr1
+.13ff	ee 99 14	inc $1499	    inc work_row
+.1402	ad 99 14	lda $1499	    lda work_row
+.1405	cd 9b 14	cmp $149b	    cmp end_row
+.1408	f0 07		beq $1411	    beq erase_last_line
+.140a	b0 0b		bcs $1417	    bcs erase_done
+.140c	ad 8f 14	lda $148f	    lda col_count ; number of columns to delete
+.140f	80 dc		bra $13ed	    bra erase_fill_line
+.1411					erase_last_line:
+.1411	ad 9a 14	lda $149a	    lda end_col ; for Erase Line, only erase up to cursor
+.1414	1a		inc a		    inc a
+.1415	80 d6		bra $13ed	    bra erase_fill_line
+.1417					erase_done:
+.1417	4c 41 14	jmp $1441	    jmp cmd_done
+.141a					do_bell:
+.141a	a9 0a		lda #$0a	    lda #bank_audio
+.141c	85 01		sta $01		    sta bank_select_rom
+.141e	a9 00		lda #$00	    lda #$00 ; channel 0
+.1420	a2 00		ldx #$00	    ldx #$00 ; 512 Hz
+.1422	a0 02		ldy #$02	    ldy #$02 ;
+.1424	18		clc		    clc
+.1425	20 6e ff	jsr $ff6e	    jsr jsrfar  ; $FF6E
+>1428	00 c0				    .word bas_fmfreq ; $C063
+>142a	0a				    .byte bank_audio
+.142b	4c 41 14	jmp $1441	    jmp cmd_done
+.142e					do_bs:
+.142e	ad 89 14	lda $1489	    lda csr_col
+.1431	f0 07		beq $143a	    beq +
+.1433	3a		dec a		    dec A
+.1434	8d 89 14	sta $1489	    sta csr_col
+.1437	20 18 12	jsr $1218	    jsr load_addr_vector
+.143a	4c 41 14	jmp $1441	+   jmp cmd_done
+.143d					do_callback:
+.143d	6c a1 14	jmp ($14a1)	    jmp (callback_addr)
+.1440					empty_callback:
+.1440	60		rts		    RTS
+.1441					cmd_done:
+.1441	9c 93 14	stz $1493	    stz param_count
+.1444	9c 94 14	stz $1494	    stz param_0
+.1447	9c 95 14	stz $1495	    stz param_1
+.144a	9c 96 14	stz $1496	    stz param_2
+.144d	4c 88 14	jmp $1488	    jmp chrout_done
+.1450					csr_blink_off:
+.1450	60		rts		    rts
+.1451					csr_blink_on:
+.1451	60		rts		    rts
+.1452					csr_blink:
+.1452	60		rts		    rts
+.1453					csr_blink_reset:
+.1453	60		rts		    rts
+.1454					csr_blink_wait:
+.1454	60		rts		    rts
+.1455					csr_hide:
+.1455	60		rts		    rts
+.1456					csr_show:
+.1456					just_print:
+.1456	8d 23 9f	sta $9f23	    sta vera_data0
+.1459	ad 8d 14	lda $148d	    lda cur_color   ; get the current color
+.145c	8d 23 9f	sta $9f23	    sta vera_data0
+.145f	ee 89 14	inc $1489	    inc csr_col     ; moves cursor to the right one position
+.1462					check_bounds:
+.1462	ad 89 14	lda $1489	    lda csr_col
+.1465	cd 8f 14	cmp $148f	    cmp col_count
+.1468	90 0a		bcc $1474	    bcc check_row
+.146a	ad 8f 14	lda $148f	    lda col_count
+.146d	3a		dec a		    dec A
+.146e	8d 89 14	sta $1489	    sta csr_col
+.1471	20 18 12	jsr $1218	    jsr load_addr_vector
+.1474					check_row:
+.1474	ad 8a 14	lda $148a	    lda csr_row
+.1477	cd 90 14	cmp $1490	    cmp row_count
+.147a	90 0c		bcc $1488	    bcc check_done
+.147c	ad 8a 14	lda $148a	    lda csr_row
+.147f	38		sec		    sec
+.1480	e9 01		sbc #$01	    sbc #$01
+.1482	8d 8a 14	sta $148a	    sta csr_row
+.1485	20 18 12	jsr $1218	    jsr load_addr_vector
+.1488					check_done:
+.1488					chrout_done:
+.1488	60		rts		    rts
+>1489	00				csr_col:       .byte $00  ; column number (addr bits 0-7)
+>148a	00				csr_row:       .byte $00  ; row number (addr bits 8-15)
+>148b	11				csr_bank:       .byte $11 ; auto-increment and addr bit 16.
+>148c	b0				csr_base:      .byte $b0  ; base address of screen buffer
+>148d	01				cur_color:      .byte $01 ; currrent color attribute
+>148e	20				cur_char:       .byte ' ' ; fill character for clear screen
+>148f	50				col_count:    .byte 80 ; default screen width
+>1490	3c				row_count:    .byte 60 ; default screen height
+>1491	00				bank_rom_save:  .byte 0 ; perserve the current ROM bank
+>1492	00				bank_ram_save:  .byte 0 ; preserve the current RAM bank
 =4					cmd_max = 4
->117a	00				param_count .byte 0     ; >0 if parsing a terminal sequence
->117b	00				param_0     .byte 0     ; [ or pain non-CSI command
->117c	00				param_1     .byte 0     ; first parameter in CSI
->117d	00				param_2     .byte 0     ; second parameter in CSI
->117e	00				digit_1     .byte 0     ; character being processed
-.117f					start_col:
->117f	00				work_col:      .byte 0  ; current col for erase/scroll (0-79)
-.1180					start_row:
->1180	00				work_row:      .byte 0  ; current row for erase/scroll (0-59)
->1181	00				end_col:       .byte 0  ; end col for erase/scroll (0-79)
->1182	00				end_row:       .byte 0  ; end row for erase/scroll (0-59)
->1183	00				mult_1:       .byte 0   ; temp slot for multiplication
->1184	00				mult_2:       .byte 0   ; temp slot for multiplication
->1185	00 00				cbs_next:   .word 0     ; the next time the cursor should blink
->1187	00				cbs_blink:  .byte 0     ; Bitmask
-.1188					callback_addr:
->1188	27 11				    .word empty_callback
+>1493	00				param_count .byte 0     ; >0 if parsing a terminal sequence
+>1494	00				param_0     .byte 0     ; [ or pain non-CSI command
+>1495	00				param_1     .byte 0     ; first parameter in CSI
+>1496	00				param_2     .byte 0     ; second parameter in CSI
+>1497	00				digit_1     .byte 0     ; character being processed
+.1498					start_col:
+>1498	00				work_col:      .byte 0  ; current col for erase/scroll (0-79)
+.1499					start_row:
+>1499	00				work_row:      .byte 0  ; current row for erase/scroll (0-59)
+>149a	00				end_col:       .byte 0  ; end col for erase/scroll (0-79)
+>149b	00				end_row:       .byte 0  ; end row for erase/scroll (0-59)
+>149c	00				mult_1:       .byte 0   ; temp slot for multiplication
+>149d	00				mult_2:       .byte 0   ; temp slot for multiplication
+>149e	00 00				cbs_next:   .word 0     ; the next time the cursor should blink
+>14a0	00				cbs_blink:  .byte 0     ; Bitmask
+.14a1					callback_addr:
+>14a1	40 14				    .word empty_callback
 
 ;******  Return to file: ANSI.ASM
 

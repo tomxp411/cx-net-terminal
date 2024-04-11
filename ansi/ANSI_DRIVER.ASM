@@ -17,13 +17,15 @@ vera_dcsel = $9f25    ; VERA data select register
 
 jsrfar = $FF6E
 
-bank_ram = $00
-bank_rom = $01
+bank_select_ram = $00
+bank_select_rom = $01
 
 bank_audio = $0A
 ym_init = $C063
 bas_fmnote = $C003
 bas_fmfreq = $c000
+bas_psgfreq = $c00f
+ym_loadpatch = $c069
 
 ; Zero page registers
 R0      = $02
@@ -59,6 +61,12 @@ ansi_init:
     ; initialize audio system for the Bell tone
     jsr jsrfar  ; $FF6E
     .word ym_init ; $C063
+    .byte bank_audio
+
+    ldx #$0d
+    sec
+    jsr jsrfar
+    .word ym_loadpatch
     .byte bank_audio
     rts 
 
@@ -176,10 +184,9 @@ do_control_char:
     bne +
     jmp do_bell
 
-+   cmp #$07 ; bell
++   cmp #$08 ; bell
     bne +
     jmp do_BS
-    jmp do_bell
 
 +   jmp just_print
 
@@ -432,27 +439,26 @@ erase_done:
     jmp cmd_done
 
 do_bell:
+    lda #bank_audio
+    sta bank_select_rom
+
     ; Trigger a note on the YM chip. 
-
-    ; save the current bank
-    lda bank_rom
-    sta bank_rom_save
-
-    lda bank_audio
-    sta bank_rom
     lda #$00 ; channel 0
-    ldx #$02 ; 512 Hz
-    ldy #$00 ; 
+    ldx #$00 ; 512 Hz
+    ldy #$02 ; 
     clc
-    jsr bas_fmfreq
-    lda bank_rom_save
-    sta bank_rom
+    ; initialize audio system for the Bell tone
+    jsr jsrfar  ; $FF6E
+    .word bas_fmfreq ; $C063
+    .byte bank_audio
+    jmp cmd_done
 
 do_bs:
     lda csr_col
     beq +
     dec A
     sta csr_col
+    jsr load_addr_vector
 +   jmp cmd_done        
 
 do_callback:
