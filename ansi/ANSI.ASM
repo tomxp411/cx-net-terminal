@@ -132,9 +132,26 @@ str_test:
     .text $0a,$0a
     .text "[Press a key]"
     .byte 0
+
     .byte 1
     .text 27,"[2J"
     .text 27,"[H"
+    .text "$07 BELL: Play a tone",$0d,$0a
+    .text $07,"Ding [Pass if you heard a 'ding' sound.]",$0d,$0a
+    .byte $0a,$0a
+    .byte 0
+
+    .text "$08 BS: Backspace",$0d,$0a
+    .text "Backspace test [should say 'pass' twice]: failpass"
+    .text $08,$08,$08,$08,$08,$08,$08,$08,"pass",$0d,$0a
+    .byte $0a,$0a
+    .byte 0
+
+    .text "$09 HT: Horizontal tab",$0d,$0a
+    .text "         |         |         |         |",$0d,$0a
+    .text "bars",9,"|should",9,"|line",9,"|up",9,"|",$0d,$0a
+    .byte $0a,$0a
+    .byte 0
     .text "Control character test",$0d,$0a,$0a
     ; LF \
     ;     \ this line should be one down, one right
@@ -150,20 +167,6 @@ str_test:
     .text "CR TEST ->",$0D,$0A
     .byte $0a,$0a
     .byte 0 
-    .text "$07 BELL: Play a tone",$0d,$0a
-    .text $07,"Ding [Pass if you heard a 'ding' sound.]",$0d,$0a
-    .byte $0a,$0a
-    .byte 0
-    .text "$08 BS: Backspace",$0d,$0a
-    .text "Backspace test [should say 'pass' twice]: failpass"
-    .text $08,$08,$08,$08,$08,$08,$08,$08,"pass",$0d,$0a
-    .byte $0a,$0a
-    .byte 0
-    .text "$09 HT: Horizontal tab",$0d,$0a
-    .text "         |         |         |         |",$0d,$0a
-    .text "bars",9,"|should",9,"|line",9,"|up",9,"|",$0d,$0a
-    .byte $0a,$0a
-    .byte 0
 
     ; Position test
     .byte 1

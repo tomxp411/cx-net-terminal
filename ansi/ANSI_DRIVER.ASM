@@ -155,12 +155,47 @@ chrout:
     cpy #cmd_max
     cpy #1
     beq chrout_read_param
-    bcs chrout_test_semi
+    bcc +
+    jmp chrout_test_semi
 
     ; look for a control character
-    cmp #' '
++   cmp #' '
     bcc do_control_char
-    jmp just_print
+
+; This actually prints the character to the screen
+; pretty simple after all that other stuff, eh?
+just_print:
+    sta vera_data0
+    lda cur_color   ; get the current color
+    sta vera_data0
+    inc csr_col     ; moves cursor to the right one position
+
+; Check the cursor column and row
+; ANSI does not wrap by default. The last character printed overwrites the 
+; character at the last column.
+; (todo) Scroll text up if cursor is past the bottom of the screen
+check_bounds:
+    lda csr_col
+    cmp col_count
+    bcc check_row
+    ;stz csr_col
+    lda col_count
+    dec A
+    sta csr_col
+    ;inc csr_row
+    jsr load_addr_vector
+check_row:
+    lda csr_row
+    cmp row_count
+    bcc check_done
+    lda csr_row
+    sec
+    sbc #$01
+    sta csr_row
+    jsr load_addr_vector
+check_done:
+chrout_done:
+    rts 
 
 do_control_char:
     cmp #$1B ; ESC
@@ -184,9 +219,13 @@ do_control_char:
     bne +
     jmp do_bell
 
-+   cmp #$08 ; bell
++   cmp #$08 ; backspace
     bne +
-    jmp do_BS
+    jmp do_bs
+
++   cmp #$09 ; tab
+    bne +
+    jmp do_tab
 
 +   jmp just_print
 
@@ -418,8 +457,6 @@ erase_fill_line:
     stz vera_addr0
     inc vera_addr1
 
-    ;stp
-
     ; check for last line
     ; or end of operation
     inc work_row
@@ -461,6 +498,17 @@ do_bs:
     jsr load_addr_vector
 +   jmp cmd_done        
 
+; move the cursor to the next tab stop. The first non-zero value is a tab
+do_tab:
+    ldx csr_col
+    dex
+-   inx
+    lda tab_stops,X
+    bpl -
+    stx csr_col
+    jsr load_addr_vector
+    jmp cmd_done
+
 do_callback:
     ; this jumps into user code, allowing the user to pull from the serial 
     ; buffer during a long screen operation (Clear, Scroll). User must preserve
@@ -470,9 +518,6 @@ do_callback:
     jmp (callback_addr)
 
 empty_callback:
-    ;debug
-    ;stp
-    ;/debug
     RTS
 
 ; Reset the terminal sequence buffer after a terminal command
@@ -519,41 +564,7 @@ csr_hide:
 csr_show:
     ; shows the cursor 
     ;godo
-
-; This actually prints the character to the screen
-; pretty simple after all that other stuff, eh?
-just_print:
-    sta vera_data0
-    lda cur_color   ; get the current color
-    sta vera_data0
-    inc csr_col     ; moves cursor to the right one position
-
-; Check the cursor column and row
-; ANSI does not wrap by default. The last character printed overwrites the 
-; character at the last column.
-; (todo) Scroll text up if cursor is past the bottom of the screen
-check_bounds:
-    lda csr_col
-    cmp col_count
-    bcc check_row
-    ;stz csr_col
-    lda col_count
-    dec A
-    sta csr_col
-    ;inc csr_row
-    jsr load_addr_vector
-check_row:
-    lda csr_row
-    cmp row_count
-    bcc check_done
-    lda csr_row
-    sec
-    sbc #$01
-    sta csr_row
-    jsr load_addr_vector
-check_done:
-chrout_done:
-    rts 
+    rts
 
 ; Data segment
 
@@ -582,12 +593,13 @@ digit_1     .byte 0     ; character being processed
 
 ; variables
 
+incr_col:
 start_col:              ; start col for erase/scroll (0-79)
-work_col:      .byte 0  ; current col for erase/scroll (0-79)
+work_col:     .byte 0  ; current col for erase/scroll (0-79)
 start_row:              ; start row for erase/scroll (0-59)
-work_row:      .byte 0  ; current row for erase/scroll (0-59)
-end_col:       .byte 0  ; end col for erase/scroll (0-79)
-end_row:       .byte 0  ; end row for erase/scroll (0-59)
+work_row:     .byte 0  ; current row for erase/scroll (0-59)
+end_col:      .byte 0  ; end col for erase/scroll (0-79)
+end_row:      .byte 0  ; end row for erase/scroll (0-59)
 mult_1:       .byte 0   ; temp slot for multiplication
 mult_2:       .byte 0   ; temp slot for multiplication
 
@@ -597,7 +609,24 @@ cbs_blink:  .byte 0     ; Bitmask
                         ; $01 = cursor is blinked on
                         ; $02 = cursor enabled
 
+; one byte per column. Since the screen has 128 virtual columns, 130 spaces
+; are provided. 
+; The high bit denotes a tab in that column.
+tab_stops:  .byte 0,0,0,0,0,0,0,0,0,$80
+            .byte 0,0,0,0,0,0,0,0,0,$80
+            .byte 0,0,0,0,0,0,0,0,0,$80
+            .byte 0,0,0,0,0,0,0,0,0,$80
+            .byte 0,0,0,0,0,0,0,0,0,$80
+            .byte 0,0,0,0,0,0,0,0,0,$80
+            .byte 0,0,0,0,0,0,0,0,0,$80
+            .byte 0,0,0,0,0,0,0,0,0,$80
+            .byte 0,0,0,0,0,0,0,0,0,$80
+            .byte 0,0,0,0,0,0,0,0,0,$80
+            .byte 0,0,0,0,0,0,0,0,0,$80
+            .byte 0,0,0,0,0,0,0,0,0,$80
+            .byte 0,0,0,0,0,0,0,0,  $FF,$FF
+
 ; this address is called at the end of each row when the screen is being
 ; scrolled or cleared (or any other long operation)
 callback_addr:
-    .word empty_callback
+            .word empty_callback
