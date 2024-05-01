@@ -38,6 +38,11 @@ R2      = $04
 R2L     = $04
 R2H     = $05
 
+colors_bank = $11   ;incr=1, bank=1
+colors_addr = $FA00
+default_color_fg = $07
+default_color_bg = $00
+
 ansi_strptr   = R0  ; string pointer for prints procedure
 
 incr16 .macro 
@@ -50,6 +55,7 @@ incr16 .macro
 ; sets up the callback
 ; loads the ANSI character set
 ; sets ISO mode
+; alters .A .X .Y Flags
 ansi_init:
     lda #15     ; ISO mode PETSCII character
     jsr $FFD2   ; print it
@@ -57,6 +63,27 @@ ansi_init:
     ; set ANSI character set
     lda #7
     jsr $ff62 ; screen_set_charset    
+
+
+    ; set VERA 
+    lda #<colors_addr
+    sta vera_addr0
+    lda #>colors_addr
+    sta vera_addr1
+    lda #colors_bank
+    sta vera_addr2
+
+    ; load the palette
+    ldx #0
+-   lda palette_data, x
+    sta vera_data0
+    inx
+    cpx #palette_end - palette_data
+    bcc -
+
+    stz cur_mode        ; reset colors and attributes
+    lda #default_color_fg  ; default color is white on black
+    sta cur_color
 
     ; initialize audio system for the Bell tone
     jsr jsrfar  ; $FF6E
@@ -76,9 +103,8 @@ ansi_init:
 ; .X Column (0-79)
 ; .Y Row (0-59)
 ; Modifies: none
-locate:
+ansi_locate:
     pha
-    jsr csr_blink_off
     stx csr_col 
     sty csr_row
     jsr load_addr_vector
@@ -131,12 +157,11 @@ ansi_print_str:
 prints_loop:
     lda (ansi_strptr)
     beq prints_done
-    jsr chrout
+    jsr ansi_chrout
     .incr16 ansi_strptr
     bra prints_loop
 prints_done:
     .incr16 ansi_strptr
-    ;jsr save_addr_vector
     rts
 
 ; Print a character to the screen 
@@ -144,15 +169,14 @@ prints_done:
 ; .A character to print
 ; modifies .A .X .Y flags
 ; stack: 3
-chrout:
+ansi_chrout:
     ;debug
     ;jmp just_print
     ;/debug
 
     ; first, test to see if we're in terminal parameter mode
-    ; param_count will be > 0
-    ldy param_count
-    cpy #cmd_max
+    ; param_index will be > 0
+    ldy param_index
     cpy #1
     beq chrout_read_param
     bcc +
@@ -182,8 +206,6 @@ check_bounds:
     lda col_count
     dec A
     sta csr_col
-    ;inc csr_row
-    jsr load_addr_vector
 check_row:
     lda csr_row
     cmp row_count
@@ -192,15 +214,15 @@ check_row:
     sec
     sbc #$01
     sta csr_row
-    jsr load_addr_vector
 check_done:
+    jsr load_addr_vector
 chrout_done:
     rts 
 
 do_control_char:
     cmp #$1B ; ESC
     bne +
-    inc param_count
+    inc param_index
     jmp chrout_done
 
 +   cmp #$0A ; Line Feed
@@ -232,18 +254,17 @@ do_control_char:
 chrout_read_param:
     cmp #'['
     bne +
-    inc param_count
+    inc param_index
     jmp chrout_done
 
 +   ; not a known escape sequence
-    stz param_count
+    stz param_index
     jmp just_print
 
 chrout_test_semi:
     cmp #';'
     bne chrout_test_number
-    lda #$03
-    sta param_count
+    inc param_index
     jmp chrout_done
 
 chrout_test_number:
@@ -260,17 +281,17 @@ chrout_test_number:
     sta digit_1
 
     ; multiply by 10
-    lda param_count,Y
+    lda parameters,Y
     asl
     asl
     asl
     sta mult_1
-    lda param_count,Y
+    lda parameters,Y
     asl
     clc
     adc mult_1
     adc digit_1
-    sta param_count,Y
+    sta parameters,Y
 
     jmp chrout_done
 chrout_not_number:
@@ -279,19 +300,81 @@ chrout_not_number:
 ; execute a terminal command
 do_CSI:
     ; Home (set cursor location)
-    cmp #'H'
-    beq do_CUP
+    cmp #'A'
+    beq do_CUU
+
+    cmp #'B'
+    beq do_CUD
+    
+    cmp #'C'
+    beq do_CUF
+    
+    cmp #'D'
+    beq do_CUB
+
     cmp #'f'
     beq do_CUP
 
+    cmp #'H'
+    beq do_CUP
+    
     cmp #'J'
-    beq do_ED
-
+    bne +
+    jmp do_ED
++
     cmp #'K'
     beq do_EL
 
+    cmp #'m'
+    bne +
+    jmp do_SGR
++    
     ; if a bad escape code is encountered, skip
     jmp cmd_done
+
+do_CUU:
+    lda param_1
+    beq +
+    lda csr_row
+    sec
+    sbc param_1
+    sta csr_row
+    jmp cmd_done
++   dec csr_row
+    jmp cmd_done    
+
+do_CUD:
+    lda param_1
+    beq +
+    lda csr_row
+    clc
+    adc param_1
+    sta csr_row
+    jmp cmd_done
++   inc csr_row
+    jmp cmd_done    
+
+do_CUF:
+    lda param_1
+    beq +
+    lda csr_col
+    clc
+    adc param_1
+    sta csr_col
+    jmp cmd_done
++   inc csr_col
+    jmp cmd_done
+
+do_CUB:
+    lda param_1
+    beq +
+    lda csr_col
+    sec
+    sbc param_1
+    sta csr_col
+    jmp cmd_done
++   dec csr_col
+    jmp cmd_done    
 
 ; Cursor Position
 do_CUP:
@@ -301,9 +384,10 @@ do_CUP:
 +   ldy param_1
     beq +
     dey
-+   jsr locate
++   jsr ansi_locate
     jmp cmd_done
 
+;---------------------------------------------------------------------------
 ; Erase Line
 do_EL:
     ; 0=cursor to end of  line
@@ -474,6 +558,7 @@ erase_last_line:
 
 erase_done:
     jmp cmd_done
+;------------------------------------------------
 
 do_bell:
     lda #bank_audio
@@ -509,6 +594,125 @@ do_tab:
     jsr load_addr_vector
     jmp cmd_done
 
+; Set Graphic Rendition: colors, bold, etc.
+do_SGR:
+    ldx #2
+sgr_loop:    
+    lda parameters, x
+
+    bne +         ;0: reset all modes, styles, and colors
+    stz cur_mode
+    lda #default_color_fg
+    sta cur_color
+    jmp sgr_next
+
++   cmp #30     
+    bcs sgr_30
+    
+    cmp #1  ; bold
+    bne +
+    lda cur_color
+    ora #$08
+    sta cur_color
+    jmp sgr_next 
+
++   cmp #22
+    bne +
+    lda cur_color
+    and #$F7 ; remove bright bit
+    sta cur_color
+    jmp sgr_next 
+
++
+sgr_30: ; 30-37: basic colors
+    cmp #38
+    bcs +
+    sec
+    sbc #30
+    sta param_1
+    lda cur_color
+    and #$F0
+    ora param_1
+    sta cur_color
+    jmp sgr_next
+
++   cmp #39
+    bne +
+    lda cur_color
+    and #$F0
+    ora #default_color_fg
+    sta cur_color
+    jmp sgr_next
+
++
+sgr_40: ; 40-47: background colors
+    cmp #48
+    bcs +
+    sec
+    sbc #40
+    asl
+    asl
+    asl
+    asl
+    sta param_1
+    lda cur_color
+    and #$0F
+    ora param_1
+    sta cur_color
+    jmp sgr_next
+
++   cmp #49
+    bne +
+    lda cur_color
+    and #$0F
+    ora #default_color_bg
+    sta cur_color
+    jmp sgr_next
+
+
++   ; 90-97: bright colors
+    cmp #90
+    bcc +
+    cmp #98
+    bcs +
+
+    sec
+    sbc #82
+    sta param_1
+    lda cur_color
+    and #$F0
+    ora param_1
+    sta cur_color
+    jmp sgr_next
+
++
+sgr_100: ; 100-107: bright background colors
+    cmp #108
+    bcs +
+    sec
+    sbc #92
+    asl
+    asl
+    asl
+    asl
+    sta param_1
+    lda cur_color
+    and #$F0
+    ora param_1
+    sta cur_color
+    jmp sgr_next
+
++   ; ignore other codes
+sgr_next:
+    inx
+    cpx param_index
+    bcs +
+    jmp sgr_loop
++   bne +
+    jmp sgr_loop
+
++   jmp cmd_done
+
 do_callback:
     ; this jumps into user code, allowing the user to pull from the serial 
     ; buffer during a long screen operation (Clear, Scroll). User must preserve
@@ -525,11 +729,11 @@ empty_callback:
 ; if carry is clear, just exits
 cmd_done:
     ; reset the parameters to 0 for next time.
-    stz param_count
+    stz param_index
     stz param_0
     stz param_1
     stz param_2
-    jmp chrout_done
+    jmp check_bounds
 
 csr_blink_off:
     ; restore the saved value to the cursor position
@@ -572,40 +776,55 @@ csr_show:
 ; and is converted to memory coordinates in load_addr_vector
 csr_col:       .byte $00  ; column number (addr bits 0-7)
 csr_row:       .byte $00  ; row number (addr bits 8-15)
-csr_bank:       .byte $11 ; auto-increment and addr bit 16.
+csr_bank:      .byte $11 ; auto-increment and addr bit 16.
 csr_base:      .byte $b0  ; base address of screen buffer
 
-cur_color:      .byte $01 ; currrent color attribute
-cur_char:       .byte ' ' ; fill character for clear screen
+cur_color:     .byte $01 ; currrent color attribute
+cur_char:      .byte ' ' ; fill character for clear screen
 
-col_count:    .byte 80 ; default screen width  
-row_count:    .byte 60 ; default screen height
+cur_mode:      .byte $00 ; Modes bitmask (not implemented)
+                         ; $01 Bold
+                         ; $02 Faint
+                         ; $04 Italic
+                         ; $08 Underline
+                         ; $10 Blink
+                         ; $20 Inverse/Reverse
+                         ; $40 Hidden/Invisible
+                         ; $80 Strikethrough
 
-bank_rom_save:  .byte 0 ; perserve the current ROM bank
-bank_ram_save:  .byte 0 ; preserve the current RAM bank
 
-cmd_max = 4
-param_count .byte 0     ; >0 if parsing a terminal sequence
-param_0     .byte 0     ; [ or pain non-CSI command
-param_1     .byte 0     ; first parameter in CSI
-param_2     .byte 0     ; second parameter in CSI
-digit_1     .byte 0     ; character being processed
+col_count:     .byte 80 ; default screen width  
+row_count:     .byte 60 ; default screen height
+
+bank_rom_save: .byte 0 ; perserve the current ROM bank
+bank_ram_save: .byte 0 ; preserve the current RAM bank
+
+param_count = 5
+parameters:
+param_index:   .byte 0     ; >0 if parsing a terminal sequence
+param_0:       .byte 0     ; .X=1 [ or pain non-CSI command 
+param_1:       .byte 0     ; .X=2 first parameter in CSI
+param_2:       .byte 0     ; .X=3 second parameter in CSI
+param_3:       .byte 0     ; .X=4 second parameter in CSI
+param_4:       .byte 0     ; .X=5 second parameter in CSI
+
+digit_1:       .byte 0     ; character being processed
 
 ; variables
 
 incr_col:
 start_col:              ; start col for erase/scroll (0-79)
-work_col:     .byte 0  ; current col for erase/scroll (0-79)
+work_col:      .byte 0  ; current col for erase/scroll (0-79)
 start_row:              ; start row for erase/scroll (0-59)
-work_row:     .byte 0  ; current row for erase/scroll (0-59)
-end_col:      .byte 0  ; end col for erase/scroll (0-79)
-end_row:      .byte 0  ; end row for erase/scroll (0-59)
-mult_1:       .byte 0   ; temp slot for multiplication
-mult_2:       .byte 0   ; temp slot for multiplication
+work_row:      .byte 0  ; current row for erase/scroll (0-59)
+end_col:       .byte 0  ; end col for erase/scroll (0-79)
+end_row:       .byte 0  ; end row for erase/scroll (0-59)
+mult_1:        .byte 0   ; temp slot for multiplication
+mult_2:        .byte 0   ; temp slot for multiplication
 
 ; cursor blink state
-cbs_next:   .word 0     ; the next time the cursor should blink
-cbs_blink:  .byte 0     ; Bitmask
+cbs_next:      .word 0     ; the next time the cursor should blink
+cbs_blink:     .byte 0     ; Bitmask
                         ; $01 = cursor is blinked on
                         ; $02 = cursor enabled
 
@@ -625,6 +844,28 @@ tab_stops:  .byte 0,0,0,0,0,0,0,0,0,$80
             .byte 0,0,0,0,0,0,0,0,0,$80
             .byte 0,0,0,0,0,0,0,0,0,$80
             .byte 0,0,0,0,0,0,0,0,  $FF,$FF
+
+; write palette data to $1FA00
+palette_data:    
+palette_normal:
+              .byte $00, $00  ; black  
+              .byte $00, $0C  ; red
+              .byte $C0, $00  ; green
+              .byte $C0, $0C  ; yellow
+              .byte $0C, $00  ; blue
+              .byte $0C, $0C  ; magenta
+              .byte $CC, $00  ; cyan
+              .byte $CC, $0C  ; white
+pallete_bright:   
+              .byte $66, $06  ; dark gray (light black)
+              .byte $00, $0f  ; light red
+              .byte $f0, $00  ; light green
+              .byte $f0, $0f  ; bright yellow
+              .byte $0f, $00  ; light blue
+              .byte $0f, $0f  ; light magenta
+              .byte $ff, $00  ; light cyan
+              .byte $ff, $0f  ; bright white
+palette_end:
 
 ; this address is called at the end of each row when the screen is being
 ; scrolled or cleared (or any other long operation)

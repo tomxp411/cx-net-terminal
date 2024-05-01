@@ -2,9 +2,9 @@ Completion checklist for Escape codes and control characters
 
 | Done | Name  | decimal | octal | hex  | C-escape | Ctrl-Key | Description                    |
 |------| ----- | ------- | ----- | ---- | -------- | -------- | ------------------------------ |
-|      | `BEL` | 7       | 007   | 0x07 | `\a`     | `^G`     | Terminal bell                  |
-|      | `BS`  | 8       | 010   | 0x08 | `\b`     | `^H`     | Backspace                      |
-|      | `HT`  | 9       | 011   | 0x09 | `\t`     | `^I`     | Horizontal TAB                 |
+| y    | `BEL` | 7       | 007   | 0x07 | `\a`     | `^G`     | Terminal bell                  |
+| y    | `BS`  | 8       | 010   | 0x08 | `\b`     | `^H`     | Backspace                      |
+| y    | `HT`  | 9       | 011   | 0x09 | `\t`     | `^I`     | Horizontal TAB                 |
 | y    | `LF`  | 10      | 012   | 0x0A | `\n`     | `^J`     | Linefeed (newline)             |
 | y    | `FF`  | 12      | 014   | 0x0C | `\f`     | `^L`     | Formfeed (also: New page `NP`) |
 | y    | `CR`  | 13      | 015   | 0x0D | `\r`     | `^M`     | Carriage return                |

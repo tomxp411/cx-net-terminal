@@ -22,9 +22,6 @@ main:
     jsr ansi_init
 
 test_start:
-    lda #$01
-    sta cur_color
-
     ; get start of test strings
     lda #<str_test
     sta R0
@@ -40,8 +37,10 @@ print_loop:
 +   cmp #26 ; end of file marker
     beq done
 
-wait_for_key:
+print_test:
     jsr ansi_print_str
+
+wait_for_key:
 -   jsr getin
     beq -
     bra print_loop
@@ -70,10 +69,6 @@ draw_test:
 +   rts
 
 done:
-    lda #$61        ; reset the screen to blue
-    sta cur_color   
-
-    jsr ansi_cls
     jmp test_start
 
     ; if we ever get here, something has failed
@@ -86,8 +81,7 @@ press_key_text:
     .text "[Press Any Key]",0
 
 test_grid:
-    .text 27,"[2J"
-    .text 27,"[2H"
+    .text 27,"[2J",27,"[2H",27,"[36m"
     .text "....,....1....,....2....,....3....,....4....,....5....,....6....,....7....,....8"
     .text 27,"[19H"
     .text "....,....1....,....2....,....3....,....4....,....5....,....6....,....7....,....8"
@@ -108,14 +102,20 @@ test_grid:
     .text "46",$0d,$0a,"47",$0d,$0a,"48",$0d,$0a,"49",$0d,$0a,"50",$0d,$0a
     .text "51",$0d,$0a,"52",$0d,$0a,"53",$0d,$0a,"54",$0d,$0a,"55",$0d,$0a
     .text "56",$0d,$0a,"57",$0d,$0a,"58",$0d,$0a,"59",$0d,$0a,"60"
-    .text 27,"[H"
+    .text 27,"[H",27,"[0m"
     .byte 0
 
 ; Test strings
 str_test:
+    ;.byte 0 ends a text string. This is required for ansi_print_str
+    ;.byte 1 tells the test rig to clear the screen and draw the rulers
+    ;   as it's part of the test rig and not the driver, it can only be
+    ;   used as the first character in a text string.
+    
     ; CR and LF test
     .text 27,"[2J",27,"[H"
     .text 27,"[2;4H"
+    ;.text 27,"[39m"
     .text "ANSI Control and Escape Code Demo",$0d,$0a,$0a,$0a
     .text "This will run several test sequences.",$0d,$0a
     .text "After each sequence, the test will pause.",$0d,$0a
@@ -133,9 +133,79 @@ str_test:
     .text "[Press a key]"
     .byte 0
 
+    .text 27,"[2J",27,"[1;15H"
+    .text 27,"[97mColor Test",13,10,10
+    .text 27,"[0m"
+    .text 27,"[37m37 WHITE    ",27,"[1m1 BOLD  ",13,10
+    .text 27,"[36m36 CYAN     ",27,"[1m1 BOLD  ",13,10
+    .text 27,"[35m35 MAGENTA  ",27,"[1m1 BOLD  ",13,10
+    .text 27,"[34m34 BLUE     ",27,"[1m1 BOLD  ",13,10
+    .text 27,"[33m33 YELLOW   ",27,"[1m1 BOLD  ",13,10
+    .text 27,"[32m32 GREEN    ",27,"[1m1 BOLD  ",13,10
+    .text 27,"[31m31 RED      ",27,"[1m1 BOLD  ",13,10
+    .text 27,"[44m"
+    .text 27,"[30m30 BLACK    ",27,"[1m1 BOLD  ",13,10
+    .text 27,"[49m"
+
+    .text $0a,$0a
+    .text 27,"[39m39 DEFAULT (white on black)",13,10
+
+    .text $0a,$0a
+    .text 27,"[97m97 BRT WHITE",13,10
+    .text 27,"[96m96 BRT CYAN",13,10
+    .text 27,"[95m95 BRT MAGENTA",13,10
+    .text 27,"[94m94 BRT BLUE",13,10
+    .text 27,"[93m93 BRT YELLOW",13,10
+    .text 27,"[92m92 BRT GREEN",13,10
+    .text 27,"[91m91 BRT RED",13,10
+    .text 27,"[90m90 BRT BLACK",13,10
+
+    .text $0a,$0a
+    .text 27,"[30;47m47 BG WHITE   ",27,"[49m",13,10
+    .text 27,"[30;46m46 BG CYAN    ",27,"[49m",13,10
+    .text 27,"[30;45m45 BG MAGENTA ",27,"[49m",13,10
+    .text 27,"[30;44m44 BG BLUE    ",27,"[49m",13,10
+    .text 27,"[30;43m43 BG YELLOW  ",27,"[49m",13,10
+    .text 27,"[30;42m42 BG GREEN   ",27,"[49m",13,10
+    .text 27,"[30;41m41 BG RED     ",27,"[49m",13,10
+    .text 27,"[90;40m40 BG BLACK   ",27,"[49m",13,10
+
+    .text $0a,$0a
+    .text 27,"[39m39 DEFAULT (white on black)",13,10
+
+    .text $0a,$0a
+    .text 27,"[37m[",27,"[93mA",27,"[37m]",27,"[32m Menu Item Test",13,10
+    .text 27,"[0m0 RESET",13,10
+    .byte 0
+
+    .text 27,"[97m"
+    .text 27,"[2J",27,"[HCursor movement test",13,10,10,10
+    .text 27,"[31m"
+    .text 27,"[5HCUU >",27,"[A< Up one line",13,10,10,10
+    .text 27,"[5;30HCUU 1 >",27,"[1A< Up 1 line",13,10,10,10
+    .text 27,"[5;60HCUU 2 >",27,"[2A< Up 2 lines",13,10
+    .text 27,"[32m"
+    .text 27,"[10HCUD >",27,"[B< Down one line",13,10,10
+    .text 27,"[10;30HCUD 1 >",27,"[B< Down one line",13,10,10
+    .text 27,"[10;60HCUD 2 >",27,"[2B< Down 2 lines",13,10,10
+
+    .text 27,"[33m"
+    .text 27,"[15HCUF >",27,"[C< One space gap",13,10,10
+    .text "CUF 1 >",27,"[C< One space gap",13,10,10
+    .text "CUF 2 >",27,"[2C< 2 space gap",13,10,10
+    .text 27,"[36m"
+    .text "CUB >X",27,"[D< Should be no gap and no X",13,10,10
+    .text "CUB 1 >X",27,"[1D< Should be no gap and no X",13,10,10
+    .text "CUB 2 >XX",27,"[2D< Should be no gap and no X",13,10,10
+    .byte $0a,$0a
+    .byte 0
+
+
     .byte 1
     .text 27,"[2J"
     .text 27,"[H"
+    .text 27,"[0m"
+    .text "Control character test",$0d,$0a,$0a
     .text "$07 BELL: Play a tone",$0d,$0a
     .text $07,"Ding [Pass if you heard a 'ding' sound.]",$0d,$0a
     .byte $0a,$0a
@@ -152,7 +222,6 @@ str_test:
     .text "bars",9,"|should",9,"|line",9,"|up",9,"|",$0d,$0a
     .byte $0a,$0a
     .byte 0
-    .text "Control character test",$0d,$0a,$0a
     ; LF \
     ;     \ this line should be one down, one right
     .text "$10 LF: moves the cursor down one line",$0d,$0a
@@ -202,8 +271,10 @@ str_test:
     ; erase display test
     .byte 1
     .text 27,"[20;20H"
+    .text 27,"[33m"
     .text "ED  cursor to end ->"
     .text 27,"[20;40H"
+    .text 27,"[90m"
     .text "[This text should disappear]"
     .byte 0
     .text 27,"[20;40H"
@@ -212,7 +283,9 @@ str_test:
 
     .byte 1
     .text 27,"[20;17H"
+    .text 27,"[90m"
     .text "[This should disappear]"
+    .text 27,"[33m"
     .text 27,"[20;40H"
     .text "<- ED start to cursor",$0D,$0A
     .text 27,"[60;54H"
@@ -231,8 +304,10 @@ str_test:
     .byte 1
     ; erase line tests
     .text 27,"[20;10H"
+    .text 27,"[33m"
     .text "EL cursor to to end of line ->"
     .text 27,"[20;40H"
+    .text 27,"[90m"
     .text "[This text should disappear]"
     .byte 0
     .text 27,"[20;40H"
@@ -240,17 +315,21 @@ str_test:
     .byte 0
 
     .text 27,"[20;10H"
-    .text "[This text should disappear]"
-    .text 27,"[20;40H"
-    .text "]<- EL start to cursor"
+    .text 27,"[90m"
+    .text "  This text should disappear ->"
+    .text 27,"[20;41H"
+    .text 27,"[33m"
+    .text "<- EL start to cursor"
     .byte 0
     .text 27,"[20;40H"
     .text 27,"[1K"
     .byte 0
 
     .text 27,"[20H"
+    .text 27,"[36m"
     .text "....,....1....,....2....,....3....,....4....,....5....,....6....,....7....,....8"
     .text 27,"[20;18H"
+    .text 27,"[33m"
     .text "[EL entire line. This text should disappear]"
     .byte 0
     .text 27,"[20;10H"
