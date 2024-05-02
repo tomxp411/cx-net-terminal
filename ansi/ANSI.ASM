@@ -21,6 +21,23 @@
 main:
     jsr ansi_init
 
+    ; ; scrolling test
+    ; jsr draw_test
+    ; jsr wait_for_key
+
+    ; ; quick scroll test
+    ; ; scroll by 1
+    ; lda #1
+    ; jsr do_scroll_up
+    ; jsr wait_for_key
+
+    ; ; scroll by 9 (should be on row 10)
+    ; jsr draw_test
+    ; lda #9
+    ; jsr do_scroll_up
+    ; jsr wait_for_key
+
+
 test_start:
     ; get start of test strings
     lda #<str_test
@@ -39,11 +56,16 @@ print_loop:
 
 print_test:
     jsr ansi_print_str
+    jsr wait_for_key
+    jmp print_loop
 
+; reads the keyboard
+; Returns key pressed in .A
+; Modifies .A Flags
 wait_for_key:
 -   jsr getin
     beq -
-    bra print_loop
+    rts
 
 ; prints the test grid, with column and row headers
 draw_test:
@@ -133,7 +155,30 @@ str_test:
     .text "[Press a key]"
     .byte 0
 
-    .text 27,"[2J",27,"[1;15H"
+    .text 1
+    .text 27,"[5;5HScroll Test: "
+    .text "The screen will scroll up by 1 line."
+    .text 27,"[60;10H[Bottom of the screen]"
+    .byte 0
+    .text 13,10,9,"[after the line feed, the new bottom]"
+    .byte 0
+
+    ; no-wrap test
+    .text 27,"[2J",27,"[H"
+    .text 27,"[2;65HNo-wrap test. -[Not visible]>"
+    .text 27,"[3HNo-Wrap test: > char should be on",$0d,$0A
+    .text "right edge and [Not visible] should not",$0d,$0a
+    .text "be visible.",$0d,$0a
+    .byte 0
+
+    .text 27,"[2J"
+    .text 27,"[H"
+    .text 27,"Bad escape code tests:",$0d,$0a
+    .text 27,"H (missing [)",$0d,$0a
+    .text 27,"[Z (Z is not a valid command)",$0d,$0a
+    .byte 0
+
+    .text 27,"[2J",27,"[1;5H"
     .text 27,"[97mColor Test",13,10,10
     .text 27,"[0m"
     .text 27,"[37m37 WHITE    ",27,"[1m1 BOLD  ",13,10
@@ -237,37 +282,6 @@ str_test:
     .byte $0a,$0a
     .byte 0 
 
-    ; Position test
-    .byte 1
-    .text 27,"[H",$c5," HOME POSITION",$0D,$0A
-    .byte 0,1
-    .text 27,"[20;40H",$c5," Row 20 Col 40",$0d,$0a
-    .byte 0,1
-    .text 27,"[60;80H",$c5
-    .text 27,"[60;65HRow 60 Col 80"
-    .byte 0,1
-    .text 27,"[4;5H",$c5," Row 4 Col 5",$0d,$0a
-    .byte 0,1
-    .text 27,"[10H+ Line 10, column 1 (no column)"
-    .byte 0,1
-    .text 27,"[;40H+ Col 40 (no row)  "
-    .byte 0
-
-    ; no-wrap test
-    .text 27,"[2J",27,"[H"
-    .text 27,"[2;65HNo-wrap test. -[Not visible]>"
-    .text 27,"[3HNo-Wrap test: > char should be on",$0d,$0A
-    .text "right edge and [Not visible] should not",$0d,$0a
-    .text "be visible.",$0d,$0a
-    .byte 0
-
-    .text 27,"[2J"
-    .text 27,"[H"
-    .text 27,"Bad escape code tests:",$0d,$0a
-    .text 27,"H missing [ in escape code",$0d,$0a
-    .text 27,"[Z invalid command in escape code",$0d,$0a
-    .byte 0
-
     ; erase display test
     .byte 1
     .text 27,"[20;20H"
@@ -336,11 +350,27 @@ str_test:
     .text 27,"[2K"
     .byte 0
 
+    ; Position test
+    .byte 1
+    .text 27,"[H",$c5," HOME POSITION",$0D,$0A
+    .byte 0,1
+    .text 27,"[20;40H",$c5," Row 20 Col 40",$0d,$0a
+    .byte 0,1
+    .text 27,"[60;80H",$c5
+    .text 27,"[60;65HRow 60 Col 80"
+    .byte 0,1
+    .text 27,"[4;5H",$c5," Row 4 Col 5",$0d,$0a
+    .byte 0,1
+    .text 27,"[10H+ Line 10, column 1 (no column)"
+    .byte 0,1
+    .text 27,"[;40H+ Col 40 (no row)  "
+    .byte 0
+
+    ; end of test
     .byte 1
     .text 27,"[29;27HPress a key to restart test"
     .byte 0
-
-    ; end of data segment
     .byte 26,0,0,0,0
+    ; end of data segment
 
 .include "ANSI_DRIVER.ASM"

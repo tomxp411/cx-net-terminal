@@ -111,11 +111,59 @@ ansi_locate:
     pla
     rts
 
+;
+; Sets the VERA address for a screen position.
+; Sets ADDR0 (address for vera_data0)
+; coordinates are zero based (fits with VERA addressing)
+; ADDR0:
+;   start_col: column
+;   start_row: row
+;   csr_bank: increment, bank bit
+; Modifies: .A
+;
+vera_set_address_0:
+    stz vera_dcsel        ; work with data port 0
+    lda start_col
+    asl A
+    sta vera_addr0
+    lda start_row
+    clc
+    adc csr_base
+    sta vera_addr1
+    lda csr_bank
+    sta vera_addr2
+    rts
+
+;
+; Sets the VERA address for a screen position.
+; Sets ADDR1 (address for vera_data1)
+; coordinates are zero based (fits with VERA addressing)
+; ADDR1:
+;   start_col: column
+;   dest_row: row
+;   csr_bank: increment, bank bit
+; Modifies: .A
+;
+vera_set_address_1:
+    lda #$01
+    sta vera_dcsel        ; work with data port 0
+    lda start_col
+    asl A
+    sta vera_addr0
+    lda start_row2
+    clc
+    adc csr_base
+    sta vera_addr1
+    lda csr_bank
+    sta vera_addr2
+    stz vera_dcsel
+    rts
+
 ; 
 ; Sets the VERA address vector to the current cursor position
 ; Row should be in Row variable
 ; Col should be in csr_col variable
-; modifies .A .P
+; modifies .A Flags
 ;
 load_addr_vector:
     stz vera_dcsel        ; work with data port 0
@@ -134,7 +182,7 @@ load_addr_vector:
 ; Sets the VERA address vector to the current cursor position
 ; Row should be in Row variable
 ; Col should be in csr_col variable
-; modifies .A .P
+; modifies .A Flags
 ;
 save_addr_vector:
     stz vera_dcsel        ; work with data port 0
@@ -197,7 +245,6 @@ just_print:
 ; Check the cursor column and row
 ; ANSI does not wrap by default. The last character printed overwrites the 
 ; character at the last column.
-; (todo) Scroll text up if cursor is past the bottom of the screen
 check_bounds:
     lda csr_col
     cmp col_count
@@ -208,11 +255,14 @@ check_bounds:
     sta csr_col
 check_row:
     lda csr_row
-    cmp row_count
-    bcc check_done
-    lda csr_row
     sec
-    sbc #$01
+    sbc row_count
+    bcc check_done
+    inc a
+    ; .A should now have the number of rows we overran the screen
+    jsr do_scroll_up
+    lda row_count
+    dec a
     sta csr_row
 check_done:
     jsr load_addr_vector
@@ -735,40 +785,119 @@ cmd_done:
     stz param_2
     jmp check_bounds
 
+;
+; cursor blinking
+; 
 csr_blink_off:
-    ; restore the saved value to the cursor position
+    ; blink the cursor off, either because the timer or 
+    ; when moving the cursor
     rts
 
 csr_blink_on:
-    ; save the attribute at the cursor position and invert the color
+    ; blink the cursor on due to the timer or because
+    ; the cursor was just moved
     ;todo
     rts
 
-csr_blink:
-    ; reverse the state of the character at the cursor position
-    ;todo
-    rts
-
-csr_blink_reset:
-    ; blinks the cursor on
-    ; resets the blink timer
+csr_blink_toggle:
+    ; blink the cursor at the 1/2 cycle time
     ;todo
     rts
 
 csr_blink_wait:
-    ; checks the clock and blinks if 1/2 second has passed
+    ; checks the clock and blinks if it's time
     ;todo
     rts
 
 csr_hide:
-    ; hides the cursor until csr_show has been called
+    ; turn the cursor off and keep it off. Disables blinking.
     ;todo
     rts
 
 csr_show:
-    ; shows the cursor 
+    ; shows the cursor and starts the blink cycle.
     ;godo
     rts
+
+; ----------------------------------------------------------------------
+; Scrolling  
+; The screen can be scrolled up or down by any number of rows.  
+; Empty space will be created at the top or bottom of the screen based on the
+; scroll direction 
+
+; move data on the screen upward
+; Always scrolls at least one row. Scrolling more than
+; the screen rows will just empty the screen. 
+; 
+; input: 
+;   .A: number of rows
+; affects: 
+;   .A .X .Y Flags
+;   vera_address0-2
+;   vera_dcsel
+do_scroll_up:
+    sta start_row2
+    ; copying from line 1 to line 0
+    stz start_row
+    stz start_col
+    lda col_count
+    dec A
+    sta end_col
+
+    jsr vera_set_address_0
+    jsr vera_set_address_1
+
+    ; set up area to scroll
+    ; scrolls rows between start_row and end_row
+    lda row_count
+    sec
+    sbc start_row2
+    tay
+
+    lda col_count
+    asl
+    tax
+    ; scroll one row
+-   lda vera_data1
+    sta vera_data0
+    dex
+    bne -
+    ; repeat for the next row
+    inc work_row
+    inc work_row2
+    jsr vera_set_address_0
+    jsr vera_set_address_1
+    dey
+    bne -
+
+; erase bottom of screen
+    ldx cur_char
+    ldy cur_color
+    lda col_count
+
+scroll_fill_line:
+    ; set address to start of next row
+    lda col_count ; number of columns to delete
+    stz vera_addr0
+    inc vera_addr1
+
+-   stx vera_data0
+    sty vera_data0      
+    dec a               
+    bne -
+    jsr do_callback  ; give serial driver the chance to empty the FIFO
+
+    ; check for last line
+    ; or end of operation
+    inc work_row
+    lda work_row
+    cmp row_count
+    bcc scroll_fill_line
+    
+    rts
+
+; end scrolling
+; ----------------------------------------------------------------------
 
 ; Data segment
 
@@ -819,8 +948,10 @@ start_row:              ; start row for erase/scroll (0-59)
 work_row:      .byte 0  ; current row for erase/scroll (0-59)
 end_col:       .byte 0  ; end col for erase/scroll (0-79)
 end_row:       .byte 0  ; end row for erase/scroll (0-59)
-mult_1:        .byte 0   ; temp slot for multiplication
-mult_2:        .byte 0   ; temp slot for multiplication
+start_row2:       
+work_row2:     .byte 0  ; data is copied FROM this row when scrolling
+mult_1:        .byte 0  ; temp slot for multiplication
+mult_2:        .byte 0  ; temp slot for multiplication
 
 ; cursor blink state
 cbs_next:      .word 0     ; the next time the cursor should blink
@@ -849,13 +980,13 @@ tab_stops:  .byte 0,0,0,0,0,0,0,0,0,$80
 palette_data:    
 palette_normal:
               .byte $00, $00  ; black  
-              .byte $00, $0C  ; red
-              .byte $C0, $00  ; green
-              .byte $C0, $0C  ; yellow
-              .byte $0C, $00  ; blue
-              .byte $0C, $0C  ; magenta
-              .byte $CC, $00  ; cyan
-              .byte $CC, $0C  ; white
+              .byte $00, $0A  ; red
+              .byte $A0, $00  ; green
+              .byte $A0, $0A  ; yellow
+              .byte $0A, $00  ; blue
+              .byte $0A, $0A  ; magenta
+              .byte $AA, $00  ; cyan
+              .byte $AA, $0A  ; white
 pallete_bright:   
               .byte $66, $06  ; dark gray (light black)
               .byte $00, $0f  ; light red
